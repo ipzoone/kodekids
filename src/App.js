@@ -7,6 +7,7 @@ import Playground from "./components/Playground";
 import Navbar from "./components/Navbar";
 import ChatWidget from "./components/ChatWidget";
 import AuthPage from "./components/AuthPage";
+import Profile from "./components/Profile";
 import { DotPattern } from "./components/magicui/DotPattern";
 import GameBlockPuzzle from "./components/GameBlockPuzzle";
 import GameBlockly from "./components/GameBlockly";
@@ -48,6 +49,18 @@ export default function App() {
       goHome();
       return;
     }
+    // Halaman profil: butuh login, tidak butuh pilih umur
+    if (target === "profile") {
+      if (!user) {
+        setMode(null);
+        setPendingMode(null);
+        setAuthMode("login");
+        return;
+      }
+      setMode("profile");
+      setPendingMode(null);
+      return;
+    }
     // Playground tidak butuh umur
     if (target === "playground") {
       setMode("playground");
@@ -78,6 +91,13 @@ export default function App() {
     storeUser(loggedInUser);
     setAuthMode(null);
     setMode("playground");
+  }
+
+  // Dipanggil Profile.jsx setelah profil disimpan — update state & localStorage
+  function handleUpdateUser(updatedUser) {
+    const merged = { ...user, ...updatedUser };
+    setUser(merged);
+    storeUser(merged);
   }
 
   function handleLogout() {
@@ -111,6 +131,15 @@ export default function App() {
       />
     );
     navActive = "login";
+  } else if (mode === "profile") {
+    screen = (
+      <Profile
+        user={user}
+        onUpdateUser={handleUpdateUser}
+        onBack={goHome}
+      />
+    );
+    navActive = "profile";
   } else if (mode === "materi") {
     screen = <Materials ageGroup={ageGroup} onHome={goHome} />;
     navActive = "materi";

@@ -67,9 +67,27 @@ export default function Navbar({ active, onNavigate, user, onLogout }) {
 
           {user ? (
             <div className="flex items-center gap-2 ml-1 sm:ml-2 pl-1 sm:pl-3 border-l-2 border-kk-ink/10">
-              <span className="hidden lg:flex items-center gap-1.5 text-sm font-bold text-kk-ink">
-                <FaUserCircle className="text-kk-indigo" /> {user.name}
-              </span>
+              <button
+                onClick={() => onNavigate("profile")}
+                title="Profil kamu"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold border-2 transition-all hover:-translate-y-px ${
+                  active === "profile"
+                    ? "bg-kk-sun text-kk-ink border-kk-ink"
+                    : "text-kk-ink border-transparent hover:bg-kk-cream"
+                }`}
+              >
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt=""
+                    className="w-6 h-6 rounded-full object-cover bg-kk-cream"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                ) : (
+                  <FaUserCircle className="text-kk-indigo text-lg" />
+                )}
+                <span className="hidden lg:inline">{user.name}</span>
+              </button>
               <button
                 onClick={onLogout}
                 title="Keluar"
@@ -112,7 +130,19 @@ export default function Navbar({ active, onNavigate, user, onLogout }) {
               title={user.name}
               className="flex items-center text-sm font-bold text-kk-ink"
             >
-              <FaUserCircle className="text-kk-indigo text-lg" />
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt=""
+                  className="w-7 h-7 rounded-full border-2 border-kk-ink object-cover bg-kk-cream cursor-pointer"
+                  onClick={() => onNavigate("profile")}
+                />
+              ) : (
+                <FaUserCircle
+                  className="text-kk-indigo text-lg cursor-pointer"
+                  onClick={() => onNavigate("profile")}
+                />
+              )}
             </span>
           )}
           <button
@@ -143,6 +173,19 @@ export default function Navbar({ active, onNavigate, user, onLogout }) {
               {active === id && <span className="ml-auto w-2.5 h-2.5 rounded-full bg-kk-ink" />}
             </button>
           ))}
+          {user && (
+            <button
+              onClick={() => handleNav("profile")}
+              className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-sm font-bold border-2 transition-colors ${
+                active === "profile"
+                  ? "bg-kk-sun text-kk-ink border-kk-ink"
+                  : "text-kk-inksoft border-transparent bg-kk-cream hover:bg-kk-sun/25"
+              }`}
+            >
+              <FaUserCircle className="text-base" /> Profil ({user.name})
+              {active === "profile" && <span className="ml-auto w-2.5 h-2.5 rounded-full bg-kk-ink" />}
+            </button>
+          )}
           {user && (
             <button
               onClick={() => {

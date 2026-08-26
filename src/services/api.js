@@ -64,6 +64,25 @@ export function storeUser(user) {
   else localStorage.removeItem("kidcode-user");
 }
 
+// ===== Profil =====
+export async function fetchProfile(userId) {
+  const res = await fetch(`/api/profile?userId=${encodeURIComponent(userId)}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+  return json;
+}
+
+export async function saveProfile(userId, name, avatarUrl) {
+  const res = await fetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, name, avatarUrl }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+  return json;
+}
+
 // ===== Workspace Playground (conversation storage per user via Blob) =====
 export async function loadWorkspace(userId) {
   const res = await fetch(`/api/workspace?userId=${encodeURIComponent(userId)}`);
