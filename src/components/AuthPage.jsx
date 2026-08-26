@@ -72,6 +72,10 @@ export default function AuthPage({ onBack, onSuccess, initialMode = "login" }) {
     loadGoogleScript()
       .then(() => {
         if (cancelled || !googleBtnRef.current) return;
+        // Lupakan akun yang terakhir dipilih supaya pemilih akun selalu muncul
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch {}
         window.google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleCredential,
@@ -85,6 +89,7 @@ export default function AuthPage({ onBack, onSuccess, initialMode = "login" }) {
           logo_alignment: "left",
           width: 320,
           locale: "id",
+          prompt: "select_account",
         });
         setGoogleReady(true);
       })

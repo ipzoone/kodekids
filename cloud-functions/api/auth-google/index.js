@@ -56,8 +56,8 @@ function jsonResponse(payload, status = 200) {
 async function executeTurso(url, token, sql, args) {
   const body = JSON.stringify({ stmt: { sql, args } });
   let lastErr;
-  // Coba 2 kali — kadang jaringan dari runtime ke Turso gagal sesaat
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  // Coba 3 kali — kadang jaringan dari runtime ke Turso gagal sesaat
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const res = await fetch(`${url}/v1/execute`, {
         method: "POST",
@@ -73,12 +73,25 @@ async function executeTurso(url, token, sql, args) {
       return JSON.parse(await res.text());
     } catch (e) {
       lastErr = e;
-      console.error(`[auth/google] Percobaan ${attempt} ke Turso gagal: ${e.message}`);
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 500));
+      console.error(
+        `[auth/google] Percobaan ${attempt} ke Turso gagal: ${e.message} | cause: ${e.cause?.code || e.cause?.message || "-"}`,
+      );
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 700));
     }
   }
+  // Susun pesan dengan rantai penyebab asli dari undici (DNS, TLS, dsb.)
+  const causes = [];
+  let c = lastErr;
+  while (c) {
+    if (c.code || (c.message && c.message !== lastErr.message)) {
+      causes.push(c.code ? `${c.code}: ${c.message}` : c.message);
+    }
+    c = c.cause;
+  }
   throw new Error(
-    `${lastErr.message} (target: ${new URL(url).host}) — kalau terus terjadi, cek nilai DB_URL_TURSO / TOKEN_TURSO di environment variables.`,
+    `${lastErr.message}${causes.length ? " | sebab: " + causes.join(" -> ") : ""} (target: ${
+      new URL(url).host
+    }`,
   );
 }
 
@@ -123,7 +136,25 @@ export async function onRequest(context) {
       );
     }
 
-    const { credential } = await readBody(context);
+    const { credential, debug } = await readBody(context);
+
+    // ===== Mode diagnosa: {"debug":"db"} -> tes konektivitas Turso mentah =====
+    if (debug === "db") {
+      try {
+        const r = await executeTurso(rawUrl, token, "SELECT 1 AS ok", []);
+        return jsonResponse({
+          status: "success",
+          message: "Koneksi Turso OK",
+          data: r.result,
+        });
+      } catch (e) {
+        return jsonResponse(
+          { status: "error", message: "Diagnosa Turso gagal", error: e.message },
+          500,
+        );
+      }
+    }
+
     if (!credential || typeof credential !== "string") {
       return jsonResponse(
         { status: "error", message: "Credential Google wajib diisi." },

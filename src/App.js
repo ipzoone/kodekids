@@ -83,6 +83,10 @@ export default function App() {
   function handleLogout() {
     setUser(null);
     storeUser(null);
+    // Lupakan sesi Google yang terpilih supaya login berikutnya bisa ganti akun
+    try {
+      window.google?.accounts?.id?.disableAutoSelect();
+    } catch {}
     fetch("/auth/logout", { method: "POST" }).catch(() => {});
     if (mode === "playground") setMode(null);
   }
