@@ -53,6 +53,14 @@ function jsonResponse(payload, status = 200) {
   });
 }
 
+// Konversi libsql:// -> https:// dengan pembersihan kutip/spasi nyasar
+function normalizeDbUrl(raw) {
+  let u = String(raw ?? '').trim().replace(/^["']+|["']+$/g, '');
+  if (u.startsWith('libsql://')) u = 'https://' + u.slice('libsql://'.length);
+  else if (!/^https?:\/\//i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
+  return u;
+}
+
 async function executeTurso(url, token, sql, args) {
   const body = JSON.stringify({ stmt: { sql, args } });
   let lastErr;
@@ -116,6 +124,7 @@ export async function onRequest(context) {
     const rawUrl = getEnv(context, "DB_URL_TURSO");
     const token = getEnv(context, "TOKEN_TURSO");
     const clientId = getEnv(context, "GOOGLE_CLIENT_ID");
+    const url = normalizeDbUrl(rawUrl);
     if (!rawUrl || !token || !clientId) {
       return jsonResponse(
         { status: "error", message: "Konfigurasi DB / GOOGLE_CLIENT_ID belum terpasang." },
@@ -184,7 +193,7 @@ export async function onRequest(context) {
     let hasGoogleId = false;
     let hasAvatarUrl = false;
     try {
-      const tableInfo = rowsToObjects(await executeTurso(rawUrl, token, "PRAGMA table_info(users)", []));
+      const tableInfo = rowsToObjects(await executeTurso(url, token, "PRAGMA table_info(users)", []));
       for (const col of tableInfo) {
         if (col.name === "google_id") hasGoogleId = true;
         if (col.name === "avatar_url") hasAvatarUrl = true;
@@ -207,7 +216,7 @@ export async function onRequest(context) {
         : [{ type: "text", value: email }];
       existing = rowsToObjects(
         await executeTurso(
-          rawUrl,
+          url,
           token,
           `SELECT ${selectCols.join(", ")} FROM users WHERE ${where} LIMIT 1`,
           args,
@@ -240,7 +249,7 @@ export async function onRequest(context) {
         user.avatar_url = avatarUrl;
       }
       if (updates.length) {
-        await executeTurso(rawUrl, token, `UPDATE users SET ${updates.join(", ")} WHERE id = ?`, [
+        await executeTurso(url, token, `UPDATE users SET ${updates.join(", ")} WHERE id = ?`, [
           ...updateArgs,
           { type: "text", value: String(user.id) },
         ]);
@@ -268,7 +277,7 @@ export async function onRequest(context) {
       let insert;
       try {
         insert = await executeTurso(
-          rawUrl,
+          url,
           token,
           `INSERT INTO users (${insertCols.join(", ")}) VALUES (${placeholders})`,
           insertArgs,
