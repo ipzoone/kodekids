@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import HomePage from "./components/HomePage";
 import ModeSelect from "./components/ModeSelect";
 import LevelSelect from "./components/LevelSelect";
@@ -8,6 +8,9 @@ import Navbar from "./components/Navbar";
 import ChatWidget from "./components/ChatWidget";
 import AuthPage from "./components/AuthPage";
 import Profile from "./components/Profile";
+import Leaderboard from "./components/Leaderboard";
+import PublicProfile from "./components/PublicProfile";
+import AchievementPopup from "./components/AchievementPopup";
 import { DotPattern } from "./components/magicui/DotPattern";
 import GameBlockPuzzle from "./components/GameBlockPuzzle";
 import GameBlockly from "./components/GameBlockly";
@@ -27,6 +30,27 @@ export default function App() {
   const [mode, setMode] = useState(null);
   const [pendingMode, setPendingMode] = useState(null);
   const [challengeLevel, setChallengeLevel] = useState(null); // level yang dipilih di layar pilih level
+  const [badgePopup, setBadgePopup] = useState(null); // id badge untuk popup achievement
+  const [selectedPublicUserId, setSelectedPublicUserId] = useState(null);
+
+  // Dengarkan event badge baru dari saveAgeProgress (services/api.js)
+  useEffect(() => {
+    function onBadge(e) {
+      const id = e.detail;
+      setBadgePopup((prev) => prev || id); // antre: tampilkan satu dulu
+    }
+    window.addEventListener("new-badge", onBadge);
+    return () => window.removeEventListener("new-badge", onBadge);
+  }, []);
+
+  function closeBadgePopup() {
+    setBadgePopup(null);
+  }
+
+  function setSelectedPublicUser(id) {
+    setSelectedPublicUserId(id);
+    setMode("public-profile");
+  }
 
   function goHome() {
     setPendingMode(null);
@@ -47,6 +71,11 @@ export default function App() {
     setChallengeLevel(null);
     if (target === "home") {
       goHome();
+      return;
+    }
+    if (target === "leaderboard") {
+      setMode("leaderboard");
+      setPendingMode(null);
       return;
     }
     // Halaman profil: butuh login, tidak butuh pilih umur
@@ -131,6 +160,12 @@ export default function App() {
       />
     );
     navActive = "login";
+  } else if (mode === "leaderboard") {
+    screen = <Leaderboard onBack={goHome} onSelectUser={(id) => setSelectedPublicUser(id)} />;
+    navActive = "leaderboard";
+  } else if (mode === "public-profile") {
+    screen = <PublicProfile userId={selectedPublicUserId} onBack={() => setMode("leaderboard")} />;
+    navActive = "leaderboard";
   } else if (mode === "profile") {
     screen = (
       <Profile
@@ -191,6 +226,9 @@ export default function App() {
       />
       <div className="relative">{screen}</div>
       <ChatWidget />
+      {badgePopup && (
+        <AchievementPopup badgeId={badgePopup} onClose={closeBadgePopup} />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-// Profile — dashboard akun: ganti nama, ganti avatar, lihat statistik.
+// Profile — dashboard akun: ganti nama, pilih avatar, koleksi badge & statistik.
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -9,20 +9,33 @@ import {
   FaSave,
   FaGamepad,
   FaTrophy,
+  FaLock,
+  FaGem,
 } from "react-icons/fa";
-import { saveProfile } from "../services/api";
-import { loadProgress } from "../services/api";
+import { saveProfile, loadProgress, syncRankProfile } from "../services/api";
+import { ALL_BADGES, BADGE_ICONS, computeBadges } from "../utils/badges";
 
 const STEPS_PER_LEVEL = 5;
+const GAME_LABELS = {
+  "5-7": "Block Puzzle",
+  "8-10": "Blockly Coding",
+  "11-15": "Coding",
+};
 
-// Avatar preset dari DiceBear — cukup ganti seed-nya
+// Avatar preset dari DiceBear — beragam gaya untuk semua selera
 const AVATAR_PRESETS = [
-  "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=robot-keren",
-  "https://api.dicebear.com/9.x/fun-emoji/svg?seed=kucing-oren",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=pahlawan",
-  "https://api.dicebear.com/9.x/big-smile/svg?seed=ceria",
-  "https://api.dicebear.com/9.x/thumbs/svg?seed=jempol",
-  "https://api.dicebear.com/9.x/bottts/svg?seed=mekanik",
+  { url: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=robot-keren", label: "Robot" },
+  { url: "https://api.dicebear.com/9.x/bottts/svg?seed=mekanik-biru", label: "Mekanik" },
+  { url: "https://api.dicebear.com/9.x/fun-emoji/svg?seed=kucing-oren", label: "Lucu" },
+  { url: "https://api.dicebear.com/9.x/adventurer/svg?seed=pahlawan-perisai", label: "Petualang" },
+  { url: "https://api.dicebear.com/9.x/big-smile/svg?seed=ceria-selalu", label: "Ceria" },
+  { url: "https://api.dicebear.com/9.x/thumbs/svg?seed=jempol-atas", label: "Jempol" },
+  { url: "https://api.dicebear.com/9.x/lorelei/svg?seed=pintar", label: "Pintar" },
+  { url: "https://api.dicebear.com/9.x/micah/svg?seed=coder", label: "Coder" },
+  { url: "https://api.dicebear.com/9.x/pixel-art/svg?seed=piksel", label: "Piksel" },
+  { url: "https://api.dicebear.com/9.x/dylan/svg?seed=rambut-jeli", label: "Rapi" },
+  { url: "https://api.dicebear.com/9.x/notionists/svg?seed=tenang", label: "Tenang" },
+  { url: "https://api.dicebear.com/9.x/open-peeps/svg?seed=senyum-lebar", label: "Senyum" },
 ];
 
 function defaultAvatar(user) {
@@ -34,11 +47,12 @@ export default function Profile({ user, onUpdateUser, onBack }) {
   const [name, setName] = useState(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || "");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null); // { ok, text }
+  const [msg, setMsg] = useState(null);
 
   if (!user) return null;
 
   const progress = loadProgress();
+  const earnedBadges = computeBadges(progress);
   const totalScore = Object.values(progress).reduce(
     (sum, p) => sum + (p?.totalScore || 0),
     0,
@@ -59,7 +73,10 @@ export default function Profile({ user, onUpdateUser, onBack }) {
     setMsg(null);
     try {
       const res = await saveProfile(user.id, name, avatarUrl);
-      onUpdateUser(res.data);
+      const merged = { ...user, ...res.data };
+      onUpdateUser(merged);
+      // Perbarui juga nama/avatar di papan peringkat
+      syncRankProfile(merged);
       setMsg({ ok: true, text: "Profil berhasil disimpan!" });
     } catch (err) {
       setMsg({ ok: false, text: err.message || "Gagal menyimpan profil" });
@@ -79,12 +96,12 @@ export default function Profile({ user, onUpdateUser, onBack }) {
         <FaArrowLeft /> Kembali
       </button>
 
+      {/* Kartu identitas */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-kk-paper border-[3px] border-kk-ink rounded-3xl p-6 sm:p-8 shadow-kk-xl"
       >
-        {/* Kartu identitas */}
         <div className="flex items-center gap-5 mb-8">
           <img
             src={previewSrc}
@@ -130,7 +147,6 @@ export default function Profile({ user, onUpdateUser, onBack }) {
         </div>
 
         <form onSubmit={handleSave} className="space-y-5">
-          {/* Ganti nama */}
           <div>
             <label className="block text-xs font-extrabold text-kk-inksoft mb-1.5 uppercase tracking-wide">
               Nama Panggilan
@@ -149,23 +165,23 @@ export default function Profile({ user, onUpdateUser, onBack }) {
           {/* Pilih avatar preset */}
           <div>
             <label className="block text-xs font-extrabold text-kk-inksoft mb-2 uppercase tracking-wide">
-              Pilih Avatar
+              Pilih Avatarmu ({AVATAR_PRESETS.length} pilihan)
             </label>
             <div className="flex gap-3 flex-wrap">
-              {AVATAR_PRESETS.map((url) => (
+              {AVATAR_PRESETS.map((preset) => (
                 <button
-                  key={url}
+                  key={preset.url}
                   type="button"
-                  onClick={() => pickPreset(url)}
-                  title="Pilih avatar ini"
+                  onClick={() => pickPreset(preset.url)}
+                  title={`${preset.label}`}
                   className={`relative w-14 h-14 rounded-xl overflow-hidden transition-transform hover:-translate-y-0.5 ${
-                    avatarUrl === url
+                    avatarUrl === preset.url
                       ? "border-[3px] border-kk-indigo shadow-kk-sm"
                       : "border-2 border-kk-ink/25 hover:border-kk-ink"
                   }`}
                 >
-                  <img src={url} alt="Avatar preset" className="w-full h-full bg-kk-cream" />
-                  {avatarUrl === url && (
+                  <img src={preset.url} alt={preset.label} className="w-full h-full bg-kk-cream" />
+                  {avatarUrl === preset.url && (
                     <FaCheckCircle className="absolute bottom-0.5 right-0.5 text-kk-indigo bg-kk-paper rounded-full" />
                   )}
                 </button>
@@ -173,21 +189,6 @@ export default function Profile({ user, onUpdateUser, onBack }) {
             </div>
           </div>
 
-          {/* Avatar URL kustom */}
-          <div>
-            <label className="block text-xs font-extrabold text-kk-inksoft mb-1.5 uppercase tracking-wide">
-              Atau Pakai Link Gambar Sendiri
-            </label>
-            <input
-              type="url"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://contoh.com/gambar.png (kosongkan untuk avatar bawaan)"
-              className="w-full bg-kk-cream border-2 border-kk-ink/20 focus:border-kk-indigo rounded-xl px-4 py-3 text-sm text-kk-ink placeholder:text-kk-inksoft/50 focus:outline-none transition-colors"
-            />
-          </div>
-
-          {/* Pesan status */}
           {msg && (
             <div
               className={`rounded-xl px-4 py-2.5 text-sm font-bold border-2 ${
@@ -217,8 +218,59 @@ export default function Profile({ user, onUpdateUser, onBack }) {
         </form>
       </motion.div>
 
+      {/* Koleksi badge */}
+      <h2 className="font-display font-semibold text-2xl text-kk-ink mt-10 mb-4 flex items-center gap-2">
+        <FaGem className="text-kk-indigo" /> Koleksi Badge
+        <span className="text-sm font-bold text-kk-inksoft ml-auto">
+          {earnedBadges.length}/{ALL_BADGES.length}
+        </span>
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        {ALL_BADGES.map((b, i) => {
+          const earned = earnedBadges.includes(b.id);
+          const Icon = BADGE_ICONS[b.icon];
+          return (
+            <motion.div
+              key={b.id}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: i * 0.03 }}
+              title={earned ? b.desc : `${b.desc} — selesaikan tantangannya!`}
+              className={`rounded-2xl p-4 text-center border-[2.5px] ${
+                earned
+                  ? "bg-kk-paper border-kk-ink shadow-kk-sm"
+                  : "bg-kk-paper/60 border-dashed border-kk-ink/25"
+              }`}
+            >
+              <div
+                className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center ${
+                  earned ? "text-white" : "bg-kk-cream text-kk-inksoft/40"
+                }`}
+                style={
+                  earned
+                    ? { backgroundColor: b.color, border: "2px solid #262138" }
+                    : undefined
+                }
+              >
+                {earned ? <Icon className="text-xl" /> : <FaLock className="text-sm" />}
+              </div>
+              <div
+                className={`mt-2 text-xs font-extrabold leading-tight ${
+                  earned ? "text-kk-ink" : "text-kk-inksoft/50"
+                }`}
+              >
+                {b.title}
+              </div>
+              <div className="text-[10px] font-bold text-kk-inksoft/60 mt-0.5">
+                {GAME_LABELS[b.game] || "Semua Game"}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
       {/* Info progres per kelompok umur */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {["5-7", "8-10", "11-15"].map((g) => {
           const p = progress[g];
           return (

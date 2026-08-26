@@ -1,3 +1,6 @@
+// Badge: hitung & bandingkan dari progres
+import { computeBadges, diffNewBadges } from "../utils/badges";
+
 const CONVERSATION_ID = "game-" + Math.random().toString(36).slice(2);
 
 export async function callGame(payload) {
@@ -115,5 +118,65 @@ export function saveAgeProgress(ageGroup, data) {
   const all = loadProgress();
   all[ageGroup] = { ...(all[ageGroup] || {}), ...data };
   localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+
+  // ===== Badge & sinkronisasi rank (hanya kalau sedang login) =====
+  try {
+    const user = loadStoredUser();
+    if (user?.id) {
+      const earned = computeBadges(all);
+      const known = JSON.parse(localStorage.getItem("kk-badges-known") || "[]");
+      const fresh = diffNewBadges(earned, known);
+      if (fresh.length) {
+        localStorage.setItem("kk-badges-known", JSON.stringify(known.concat(fresh)));
+        // Popup achievement ditangani App.js lewat event ini
+        for (const id of fresh) {
+          window.dispatchEvent(new CustomEvent("new-badge", { detail: id }));
+        }
+      }
+      // Sinkron ke papan peringkat (fire-and-forget, tidak memblokir game)
+      syncRank(user, all, earned).catch(() => {});
+    }
+  } catch {}
+
   return all;
+}
+
+// Kirim progres + badge ke papan peringkat (EdgeOne Blob KV)
+async function syncRank(user, progress, badges) {
+  await fetch("/api/rank", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: user.id,
+      name: user.name,
+      avatarUrl: user.avatar_url || null,
+      badges,
+      scores: {
+        "5-7": progress["5-7"]?.totalScore || 0,
+        "8-10": progress["8-10"]?.totalScore || 0,
+        "11-15": progress["11-15"]?.totalScore || 0,
+      },
+    }),
+  });
+}
+
+// Versi publik — dipakai Profile.jsx setelah ganti nama/avatar
+export function syncRankProfile(user) {
+  const progress = loadProgress();
+  return syncRank(user, progress, computeBadges(progress)).catch(() => {});
+}
+
+// ===== Leaderboard & profil publik =====
+export async function fetchLeaderboard(game) {
+  const res = await fetch(`/api/rank?type=board&game=${encodeURIComponent(game)}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+  return json.data || [];
+}
+
+export async function fetchPublicUser(userId) {
+  const res = await fetch(`/api/rank?type=user&id=${encodeURIComponent(userId)}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+  return json.data;
 }

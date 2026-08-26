@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  FaTrophy,
   FaBook,
   FaGamepad,
   FaHome,
@@ -15,6 +16,7 @@ export default function Navbar({ active, onNavigate, user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const items = [
     { id: "home", label: "Beranda", Icon: FaHome },
+    { id: "leaderboard", label: "Peringkat", Icon: FaTrophy },
     { id: "materi", label: "Materi", Icon: FaBook },
     { id: "challenge", label: "Challenge", Icon: FaGamepad },
     { id: "playground", label: "Playground", Icon: FaFolderOpen },
