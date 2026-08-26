@@ -32,19 +32,19 @@ export default function HeroVideoDialog({
         <img
           src={thumbnailSrc}
           alt={thumbnailAlt}
-          className="w-full rounded-2xl border border-white/10 shadow-2xl shadow-black/50"
+          className="w-full rounded-2xl border-[3px] border-kk-ink shadow-kk-lg"
         />
         {/* Overlay gelap */}
         <div className="absolute inset-0 rounded-2xl bg-black/20 group-hover:bg-black/10 transition-colors" />
         {/* Tombol play */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-sky-500 group-hover:bg-sky-400 transition-colors w-20 h-20 rounded-full flex items-center justify-center shadow-xl shadow-black/40 group-hover:scale-110 transition-transform">
+          <div className="bg-kk-indigo group-hover:bg-kk-indigodeep transition-colors w-20 h-20 rounded-full border-[3px] border-kk-ink shadow-kk-md flex items-center justify-center group-hover:scale-110 transition-transform text-white">
             <FaPlay className="text-2xl ml-1" />
           </div>
         </div>
         {/* Label */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur rounded-full px-5 py-2 text-sm font-bold whitespace-nowrap">
-          ▶ Tonton cara kerja KodeKids
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-kk-paper border-2 border-kk-ink shadow-kk-sm rounded-full px-5 py-2 text-sm font-extrabold whitespace-nowrap text-kk-ink">
+          Tonton cara kerja KodeKids
         </div>
       </motion.div>
 

@@ -34,14 +34,19 @@ export async function callRunner({ language, code, tests, mode = "test" }) {
 
 // ===== Auth =====
 export async function callAuth(action, payload) {
-  const res = await fetch(`/auth/${action}`, {
+  // "api-google" dipetakan ke /api/auth-google (grup /api/* terbukti bisa
+  // mengakses Turso dari produksi; grup /auth/* bermasalah egressnya)
+  const path = action === "api-google" ? `/api/auth-google` : `/auth/${action}`;
+  const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(json.message || `HTTP ${res.status}`);
+    // Sertakan detail teknis kalau ada, supaya penyebab gagal kelihatan
+    const parts = [json.message, json.detail || json.error].filter(Boolean);
+    throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
   }
   return json;
 }

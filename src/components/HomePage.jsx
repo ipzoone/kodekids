@@ -205,7 +205,7 @@ export default function HomePage({ onSelect }) {
         <HeroVideoDialog
           animationStyle="from-center"
           videoSrc="https://www.youtube.com/embed/qh3NGpYRG3I?si=4rb-zSdDkVK9qxxb"
-          thumbnailSrc="https://startup-template-sage.vercel.app/hero-light.png"
+          thumbnailSrc={`${process.env.PUBLIC_URL}/image.png`}
           thumbnailAlt="Video tutorial KodeKids"
         />
       </div>
