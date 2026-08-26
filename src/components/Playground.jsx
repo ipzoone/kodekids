@@ -15,6 +15,9 @@ import {
   FaFolderPlus,
   FaPen,
   FaTrash,
+  FaPlus,
+  FaFileImport,
+  FaDownload,
 } from "react-icons/fa";
 import { Tree, ContextMenu } from "./magicui/FileTree";
 import Modal from "./magicui/Modal";
@@ -220,9 +223,12 @@ const LOCAL_KEY = "kidcode-playground-v2";
 export default function Playground({ onHome, user }) {
   const [entries, setEntries] = useState(DEFAULT_ENTRIES);
   const [activeId, setActiveId] = useState("kodeku/main.py");
+  const [projectName, setProjectName] = useState("kodekids-project");
   const [output, setOutput] = useState("# output akan muncul di sini");
   const [busy, setBusy] = useState(false);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error | guest
+  const [notice, setNotice] = useState(""); // pesan singkat untuk aksi ekspor/impor
+  const importInputRef = useRef(null);
 
   const loadedRef = useRef(false);
   const timerRef = useRef(null);
@@ -243,12 +249,14 @@ export default function Playground({ onHome, user }) {
           if (data?.files && Object.keys(data.files).length > 0) {
             setEntries(data.files);
             if (data.activeId && data.files[data.activeId]) setActiveId(data.activeId);
+            if (data.name) setProjectName(data.name);
           }
         } else {
           const local = JSON.parse(localStorage.getItem(LOCAL_KEY));
           if (local?.files && Object.keys(local.files).length > 0) {
             setEntries(local.files);
             if (local.activeId && local.files[local.activeId]) setActiveId(local.activeId);
+            if (local.name) setProjectName(local.name);
           }
         }
       } catch (e) {
@@ -262,27 +270,42 @@ export default function Playground({ onHome, user }) {
     load();
   }, [user]);
 
-  // Autosave (debounce 1 detik) setiap kali file berubah
+  // ===== Simpan (debounce otomatis + bisa dipicu manual) =====
+  async function persist() {
+    try {
+      if (user) {
+        await saveWorkspace(user.id, entries, activeId, projectName);
+        setSaveState("saved");
+      } else {
+        localStorage.setItem(
+          LOCAL_KEY,
+          JSON.stringify({ files: entries, activeId, name: projectName }),
+        );
+        setSaveState("guest");
+      }
+    } catch (e) {
+      console.warn("Gagal menyimpan workspace:", e.message);
+      setSaveState("error");
+    }
+  }
+
+  // Autosave (debounce 1 detik) setiap kali file/nama berubah
   useEffect(() => {
     if (!loadedRef.current) return;
     setSaveState(user ? "saving" : "guest");
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async () => {
-      try {
-        if (user) {
-          await saveWorkspace(user.id, entries, activeId);
-          setSaveState("saved");
-        } else {
-          localStorage.setItem(LOCAL_KEY, JSON.stringify({ files: entries, activeId }));
-          setSaveState("guest");
-        }
-      } catch (e) {
-        console.warn("Gagal menyimpan workspace:", e.message);
-        setSaveState("error");
-      }
-    }, 1000);
+    timerRef.current = setTimeout(persist, 1000);
     return () => clearTimeout(timerRef.current);
-  }, [entries, activeId, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, activeId, projectName, user]);
+
+  // Simpan sekarang tanpa menunggu debounce
+  function saveNow() {
+    if (!loadedRef.current) return;
+    setSaveState(user ? "saving" : "guest");
+    clearTimeout(timerRef.current);
+    persist();
+  }
 
   function updateContent(value) {
     setEntries((e) => ({ ...e, [activeId]: { ...e[activeId], content: value } }));
@@ -488,6 +511,115 @@ export default function Playground({ onHome, user }) {
     }
   }
 
+  // ===== Ekspor / Impor / Project Baru =====
+  function flashNotice(text) {
+    setNotice(text);
+    setTimeout(() => setNotice(""), 3500);
+  }
+
+  function safeZipName() {
+    return (
+      projectName.trim().replace(/[^\w\- ]+/g, "").replace(/\s+/g, "-") ||
+      "kodekids-project"
+    );
+  }
+
+  function downloadBlob(blob, filename) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  // Unduh seluruh project sebagai file .zip
+  async function exportZip() {
+    try {
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      for (const [path, entry] of Object.entries(entries)) {
+        if (entry.__folder__) zip.folder(path);
+        else zip.file(path, entry.content ?? "");
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(blob, `${safeZipName()}.zip`);
+      flashNotice("Project berhasil diunduh sebagai .zip ✓");
+    } catch (e) {
+      flashNotice("Gagal mengunduh ZIP: " + e.message);
+    }
+  }
+
+  // Impor project dari file .zip di komputer
+  async function importZip(file) {
+    try {
+      const { default: JSZip } = await import("jszip");
+      const zip = await JSZip.loadAsync(file);
+      const next = {};
+      let firstFile = null;
+
+      for (const f of Object.values(zip.files)) {
+        const clean = f.name.replace(/^\.\//, "");
+        if (!clean || clean.startsWith("__MACOSX") || clean.includes("/__MACOSX") || clean.includes(".git/")) continue;
+        if (f.dir) {
+          next[clean] = { __folder__: true };
+          continue;
+        }
+        // Lewati file biner yang tidak berguna untuk editor kode
+        if (/\.(png|jpe?g|gif|webp|ico|pdf|zip|rar|7z|exe|dll|so|dylib|woff2?|ttf|otf|eot|mp[34]|wav|ogg|avi|mov)$/i.test(clean)) continue;
+        const content = await f.async("string");
+        next[clean] = { language: langOf(clean), content };
+        if (!firstFile) firstFile = clean;
+      }
+
+      if (!firstFile && !Object.keys(next).length) {
+        flashNotice("ZIP kosong atau tidak berisi file teks yang didukung.");
+        return;
+      }
+      setEntries(next);
+      setActiveId(firstFile || "main.py");
+      setProjectName(file.name.replace(/\.zip$/i, "") || "project-impor");
+      loadedRef.current = true;
+      flashNotice("Project berhasil diimpor ✓");
+    } catch (e) {
+      flashNotice("Gagal mengimpor ZIP: " + e.message);
+    }
+  }
+
+  function askImport() {
+    setDialog({
+      kind: "confirm",
+      title: "Impor Project (.zip)",
+      message:
+        "File di editor saat ini akan DIGANTI dengan isi ZIP yang kamu pilih. Lanjutkan?",
+      confirmLabel: "Pilih File ZIP",
+      onConfirm: () => importInputRef.current?.click(),
+    });
+  }
+
+  // Mulai project baru yang kosong
+  function newProject() {
+    setDialog({
+      kind: "confirm",
+      title: "Buat Project Baru",
+      message:
+        "Editor akan dikosongkan menjadi project baru. Pastikan project lama sudah diekspor/terekspor jika ingin disimpan. Lanjutkan?",
+      confirmLabel: "Ya, Buat Baru",
+      onConfirm: () => {
+        setEntries({
+          "main.py": {
+            language: "python",
+            content: '# Project baru KodeKids!\n# Tekan JALANKAN untuk melihat hasilnya.\n\nprint("Halo, dunia!")\n',
+          },
+        });
+        setActiveId("main.py");
+        setProjectName("kodekids-project");
+        flashNotice("Project baru siap ✓");
+      },
+    });
+  }
+
   const SAVE_LABELS = {
     saving: "Menyimpan...",
     saved: "Tersimpan otomatis",
@@ -533,6 +665,66 @@ export default function Playground({ onHome, user }) {
           <b>Login</b> dulu supaya kode kamu aman & bisa diakses dari perangkat mana pun.
         </div>
       )}
+
+      {/* ===== Toolbar project: nama, baru, impor, unduh, simpan web ===== */}
+      <div className="mb-4 flex items-center gap-2 flex-wrap bg-kk-paper border-[2.5px] border-kk-ink rounded-2xl p-2.5 shadow-kk-sm">
+        <FaFolderOpen className="text-kk-indigo ml-1 shrink-0" />
+        <input
+          type="text"
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          maxLength={60}
+          placeholder="nama-project"
+          title="Nama project (ikut tersimpan & jadi nama file ZIP)"
+          className="flex-1 min-w-[150px] bg-kk-cream border-2 border-kk-ink/20 focus:border-kk-indigo rounded-xl px-3 py-2 text-sm font-bold text-kk-ink placeholder:text-kk-inksoft/50 focus:outline-none transition-colors"
+        />
+        <button
+          onClick={newProject}
+          title="Buat project baru"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold border-2 border-kk-ink bg-kk-sun text-kk-ink shadow-kk-sm hover:brightness-105 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <FaPlus /> Baru
+        </button>
+        <button
+          onClick={askImport}
+          title="Impor project dari file .zip di komputer"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold border-2 border-kk-ink bg-kk-teal text-white shadow-kk-sm hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <FaFileImport /> Impor ZIP
+        </button>
+        <button
+          onClick={exportZip}
+          title="Unduh seluruh project sebagai .zip"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold border-2 border-kk-ink bg-kk-coral text-white shadow-kk-sm hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <FaDownload /> Unduh .zip
+        </button>
+        <button
+          onClick={saveNow}
+          title="Simpan sekarang ke web (kalau belum login: ke browser ini)"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold border-2 border-kk-indigodeep bg-kk-indigo text-white shadow-kk-sm hover:brightness-110 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+        >
+          <FaCloudUploadAlt /> Simpan Web
+        </button>
+        {notice && (
+          <span className="w-full sm:w-auto sm:ml-auto text-xs font-extrabold text-emerald-700 px-2">
+            {notice}
+          </span>
+        )}
+      </div>
+
+      {/* Input tersembunyi untuk pemilihan file ZIP saat impor */}
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) importZip(f);
+          e.target.value = "";
+        }}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Sidebar file tree */}

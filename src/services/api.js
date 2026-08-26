@@ -94,11 +94,11 @@ export async function loadWorkspace(userId) {
   return json.data || null;
 }
 
-export async function saveWorkspace(userId, files, activeId) {
+export async function saveWorkspace(userId, files, activeId, name) {
   const res = await fetch("/api/workspace", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, files, activeId }),
+    body: JSON.stringify({ userId, files, activeId, name }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
   return res.json();

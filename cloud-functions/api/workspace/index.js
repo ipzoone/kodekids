@@ -59,19 +59,20 @@ export async function onRequest(context) {
       } catch {
         body = context.request.body || {};
       }
-      const { userId, files, activeId } = body;
-      if (!userId || !files) {
-        return jsonResponse(
-          { status: "error", message: "userId dan files wajib diisi." },
-          400,
-        );
-      }
-      await store.setJSON(`playground/${userId}`, {
-        files,
-        activeId: activeId ?? null,
-        savedAt: Date.now(),
-      });
-      return jsonResponse({ status: "success", message: "Workspace tersimpan." });
+    const { userId, files, activeId, name } = body;
+    if (!userId || !files) {
+      return jsonResponse(
+        { status: "error", message: "userId dan files wajib diisi." },
+        400,
+      );
+    }
+    await store.setJSON(`playground/${userId}`, {
+      name: typeof name === "string" ? name.slice(0, 60) : undefined,
+      files,
+      activeId: activeId ?? null,
+      savedAt: Date.now(),
+    });
+    return jsonResponse({ status: "success", message: "Workspace tersimpan." });
     }
 
     return jsonResponse({ status: "error", message: "Method not allowed" }, 405);
