@@ -1,0 +1,55 @@
+Quiz Topics:
+- Coding
+
+=== Coding Knowledge Base (KodeKids) ===
+
+Apa itu koding?
+Koding (pemrograman) adalah menulis perintah untuk komputer supaya melakukan sesuatu. Komputer tidak bisa berpikir sendiri, ia hanya menjalankan perintah yang ditulis programmer.
+
+Sequence / Urutan
+Program dibaca dari atas ke bawah. Urutan perintah sangat penting; kalau urutannya salah hasilnya salah.
+
+Variabel
+Variabel adalah wadah bernama untuk menyimpan data seperti angka atau teks.
+Python: nama = "Sinta" (tanpa kata kunci).
+JavaScript: let nama = "Sinta"; (pakai let) dan const untuk nilai yang tidak boleh berubah.
+
+Output / Menampilkan teks
+Python memakai print("Halo"). JavaScript memakai console.log("Halo");.
+Teks harus dibungkus tanda kutip.
+
+Komentar
+Python memakai tanda # . JavaScript memakai // .
+
+Operator matematika
++ tambah, - kurang, * kali, / bagi, % modulo (sisa bagi). Sama di Python dan JavaScript.
+Contoh: 7 % 2 hasilnya 1. Untuk cek genap: n % 2 == 0.
+
+Perbandingan
+== sama, != tidak sama, > lebih besar, < lebih kecil.
+Di JavaScript gunakan === (identik) daripada == karena === membandingkan nilai sekaligus tipenya.
+
+Boolean
+Nilai benar/salah. Python menulis True dan False (huruf besar di awal). JavaScript menulis true dan false (huruf kecil semua).
+
+If / Else (kondisi)
+Python: if nilai >= 75:  lalu baris berikutnya diberi indentasi (spasi di awal).
+JavaScript: if (nilai >= 75) { ... } else { ... } pakai kurung kurawal.
+Python memakai elif, JavaScript memakai else if.
+
+Loop / Perulangan
+Python: for i in range(3): artinya ulangi 3 kali dengan i = 0,1,2 (mulai dari nol).
+JavaScript: for (let i = 0; i < 3; i++) { ... } terdiri dari mulai, syarat, perubahan.
+
+String / Teks
+Menggabungkan teks: Python pakai f-string contoh f"Halo, {nama}", JavaScript pakai template literal contoh `Halo, ${nama}` dengan backtick.
+Membalik string: Python pakai slicing kata[::-1]. JavaScript pakai kata.split("").reverse().join("").
+
+Blockly
+Blockly adalah cara belajar koding dengan menyusun blok-blok puzzle seperti LEGO. Blok bisa diubah menjadi kode Python maupun JavaScript.
+
+Debugging
+Bug adalah kesalahan dalam program. Debugging adalah proses mencari dan memperbaiki bug. Programmer hebat pun sering melakukan debugging.
+
+Tips belajar koding
+Mulai dari yang mudah, jangan takut salah, baca error message dengan teliti, dan latihan setiap hari.

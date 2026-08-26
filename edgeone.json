@@ -1,0 +1,13 @@
+{
+  "name": "quiz-assistant",
+  "type": "agent",
+  "runtime": "node",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "agents": {
+    "app": {
+      "entry": "agents/app/index.js"
+    }
+  }
+}

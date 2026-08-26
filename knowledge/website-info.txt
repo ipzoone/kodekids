@@ -1,0 +1,37 @@
+=== Tentang Website KodeKids ===
+
+Apa itu KodeKids?
+KodeKids adalah website belajar koding (pemrograman) yang seru untuk anak-anak usia 5 sampai 15 tahun. Semua tampilan berbahasa Indonesia. Anak bisa belajar materi, main game koding, dan praktik menulis kode langsung di browser.
+
+Kelompok umur
+Website dibagi menjadi 3 kelompok umur:
+- 5-7 tahun: belajar lewat gambar dan puzzle blok sederhana.
+- 8-10 tahun: belajar lewat blok Blockly seperti LEGO.
+- 11-15 tahun: belajar menulis kode Python dan JavaScript sungguhan.
+
+Halaman-halaman di KodeKids
+1. Beranda: halaman awal untuk memilih kelompok umur, ada hero, fitur unggulan, dan total skor yang tersimpan.
+2. Pilih Mode: setelah pilih umur, anak bisa memilih mode "Materi" untuk belajar atau "Challenge" untuk main game. Di sini juga terlihat progres poin dan level.
+3. Materi: kumpulan bahan belajar per kelompok umur. Materi berisi langkah-langkah, demo Blockly, dan contoh kode Python serta JavaScript. Ada penanda materi sudah dibaca.
+4. Challenge: permainan koding sesuai umur.
+5. Playground: editor kode mirip VSCode di browser, lengkap dengan daftar file, editor Monaco, dan tempat melihat hasil kode. Bisa dipakai tanpa memilih umur. Kalau sudah login, file Playground otomatis tersimpan ke server.
+6. Masuk / Daftar: halaman akun untuk login atau registrasi.
+
+Game Challenge per umur
+- Umur 5-7 tahun (Block Puzzle): menyusun urutan ikon dengan drag atau tap, misalnya urutan kucing makan ikan. Melatih konsep sequence/urutan.
+- Umur 8-10 tahun (Blockly): merakit blok-blok puzzle dari kategori Teks, Cetak, Perulangan, Logika, Matematika, dan Variabel. Blok bisa diubah menjadi kode JavaScript atau Python.
+- Umur 11-15 tahun (Code): menulis kode Python atau JavaScript asli di editor Monaco, ada output langsung saat mengetik, dan jawaban dinilai otomatis lewat test cases.
+
+Sistem level dan poin
+Setiap kelompok umur punya 5 level. Jawaban benar mendapat bintang/poin lalu naik ke level berikutnya. Ada petunjuk AI (hint) yang membantu tanpa membocorkan jawaban. Progres tersimpan otomatis.
+
+Akun dan login
+Anak bisa daftar dengan nama, email, dan password (minimal 6 karakter). Setelah daftar langsung masuk. Password disimpan dalam bentuk hash SHA-256 sehingga aman. Manfaat utama login adalah file di Playground ikut tersimpan ke server, jadi tidak hilang walau ganti perangkat.
+
+Teknologi yang dipakai
+Frontend: React 19, Tailwind CSS, Framer Motion (animasi), Blockly, Monaco Editor, react-icons.
+Backend: cloud functions EdgeOne, database Turso (libsql), penyimpanan file EdgeOne Pages Blob.
+AI: soal challenge dibuat oleh AI (LangChain/LangGraph), chat asisten KodeBot memakai RAG dengan knowledge base.
+
+KodeBot
+KodeBot adalah asisten AI berbentuk widget chat di pojok kanan bawah website. Tugasnya menjawab pertanyaan seputar koding dan membantu anak memakai website KodeKids.
