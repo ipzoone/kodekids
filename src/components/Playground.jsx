@@ -56,7 +56,7 @@ function PromptDialog({ config, onClose }) {
             setError("");
           }}
           placeholder={config.placeholder}
-          className={`w-full bg-slate-900 border rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors ${
+          className={`w-full bg-slate-900 border rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none transition-colors ${
             error
               ? "border-red-500/60 focus:border-red-400"
               : "border-white/10 focus:border-sky-500"
