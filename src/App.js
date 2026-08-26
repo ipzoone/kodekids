@@ -132,12 +132,15 @@ export default function App() {
   function handleLogout() {
     setUser(null);
     storeUser(null);
+    // Keluar dari semua layar yang bergantung sesi supaya progres tidak
+    // tertulis ke akun yang salah saat ganti user
+    setChallengeLevel(null);
+    setMode((m) => (["playground", "profile", "challenge"].includes(m) ? null : m));
     // Lupakan sesi Google yang terpilih supaya login berikutnya bisa ganti akun
     try {
       window.google?.accounts?.id?.disableAutoSelect();
     } catch {}
     fetch("/auth/logout", { method: "POST" }).catch(() => {});
-    if (mode === "playground") setMode(null);
   }
 
   function handleSelectAge(group) {

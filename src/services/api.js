@@ -104,38 +104,58 @@ export async function saveWorkspace(userId, files, activeId) {
   return res.json();
 }
 
-const PROGRESS_KEY = "kidcode-progress-v1";
+// ===== Progres challenge — DISIMPAN PER USER =====
+// Kunci memakai userId supaya tiap akun punya progres sendiri.
+// Belum login -> kunci guest (terpisah, mulai dari nol).
+const LEGACY_PROGRESS_KEYS = ["kidcode-progress-v1"];
+
+function currentUserOrNull() {
+  try {
+    return JSON.parse(localStorage.getItem("kidcode-user")) || null;
+  } catch {
+    return null;
+  }
+}
+
+function progressKey() {
+  const user = currentUserOrNull();
+  return user?.id ? `kk-progress-${user.id}` : "kk-progress-guest";
+}
 
 export function loadProgress() {
   try {
-    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+    return JSON.parse(localStorage.getItem(progressKey())) || {};
   } catch {
     return {};
   }
 }
 
 export function saveAgeProgress(ageGroup, data) {
+  const user = currentUserOrNull();
   const all = loadProgress();
   all[ageGroup] = { ...(all[ageGroup] || {}), ...data };
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+  localStorage.setItem(progressKey(), JSON.stringify(all));
+
+  // Bersihkan sisa penyimpanan versi lama yang bersifat global
+  for (const k of LEGACY_PROGRESS_KEYS) localStorage.removeItem(k);
 
   // ===== Badge & sinkronisasi rank (hanya kalau sedang login) =====
+  if (!user?.id) return all;
   try {
-    const user = loadStoredUser();
-    if (user?.id) {
-      const earned = computeBadges(all);
-      const known = JSON.parse(localStorage.getItem("kk-badges-known") || "[]");
-      const fresh = diffNewBadges(earned, known);
-      if (fresh.length) {
-        localStorage.setItem("kk-badges-known", JSON.stringify(known.concat(fresh)));
-        // Popup achievement ditangani App.js lewat event ini
-        for (const id of fresh) {
-          window.dispatchEvent(new CustomEvent("new-badge", { detail: id }));
-        }
+    const earned = computeBadges(all);
+    // Set badge yang sudah terlihat juga per-user
+    const badgeKey = `kk-badges-known-${user.id}`;
+    const known = JSON.parse(localStorage.getItem(badgeKey) || "[]");
+    const fresh = diffNewBadges(earned, known);
+    if (fresh.length) {
+      localStorage.setItem(badgeKey, JSON.stringify(known.concat(fresh)));
+      // Popup achievement ditangani App.js lewat event ini
+      for (const id of fresh) {
+        window.dispatchEvent(new CustomEvent("new-badge", { detail: id }));
       }
-      // Sinkron ke papan peringkat (fire-and-forget, tidak memblokir game)
-      syncRank(user, all, earned).catch(() => {});
     }
+    // Sinkron ke papan peringkat (fire-and-forget, tidak memblokir game)
+    syncRank(user, all, earned).catch(() => {});
   } catch {}
 
   return all;
