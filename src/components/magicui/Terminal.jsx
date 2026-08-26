@@ -5,13 +5,13 @@ import { motion } from "framer-motion";
 
 export function Terminal({ children }) {
   return (
-    <div className="w-full rounded-xl border border-white/10 bg-[#0a0e14] shadow-2xl shadow-black/40 overflow-hidden font-mono text-sm">
+    <div className="w-full rounded-xl border-2 border-white/15 bg-[#0a0e14] shadow-2xl shadow-black/40 overflow-hidden font-mono text-sm text-kk-cream">
       {/* Bar atas ala terminal */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.03]">
         <span className="w-3 h-3 rounded-full bg-red-500" />
         <span className="w-3 h-3 rounded-full bg-yellow-500" />
         <span className="w-3 h-3 rounded-full bg-green-500" />
-        <span className="ml-3 text-xs text-white/40">kodekids — zsh</span>
+        <span className="ml-3 text-xs text-white/50">kodekids — zsh</span>
       </div>
       <div className="p-5 space-y-1.5 min-h-[220px] text-left leading-relaxed">
         {children}

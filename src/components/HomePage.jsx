@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import confetti from "canvas-confetti";
 import {
   FaPuzzlePiece,
   FaCubes,
@@ -72,11 +73,17 @@ const FEATURES = [
   },
 ];
 
-function SectionHead({ title, sub }) {
+function SectionHead({ title, sub, light = false }) {
   return (
     <div className="text-center mb-9">
-      <h2 className="font-display font-semibold text-3xl md:text-4xl text-kk-ink">{title}</h2>
-      <p className="text-kk-inksoft font-bold mt-2">{sub}</p>
+      <h2
+        className={`font-display font-semibold text-3xl md:text-4xl ${
+          light ? "text-kk-cream" : "text-kk-ink"
+        }`}
+      >
+        {title}
+      </h2>
+      <p className={`font-bold mt-2 ${light ? "text-kk-cream/65" : "text-kk-inksoft"}`}>{sub}</p>
     </div>
   );
 }
@@ -88,14 +95,56 @@ export default function HomePage({ onSelect }) {
     0,
   );
 
+  // ===== Confetti di judul (muncul sekali saat halaman dibuka + saat hover judul) =====
+  const confettiCanvasRef = useRef(null);
+
+  function fireHeroConfetti() {
+    const canvas = confettiCanvasRef.current;
+    if (!canvas) return;
+    const shoot = confetti.create(canvas, { resize: true, useWorker: true });
+    const colors = ["#FF6B57", "#0FA398", "#5B52F0", "#FFC145"];
+    const end = Date.now() + 900;
+    (function frame() {
+      shoot({
+        particleCount: 4,
+        angle: 60,
+        spread: 60,
+        startVelocity: 55,
+        origin: { x: 0, y: 0.7 },
+        colors,
+      });
+      shoot({
+        particleCount: 4,
+        angle: 120,
+        spread: 60,
+        startVelocity: 55,
+        origin: { x: 1, y: 0.7 },
+        colors,
+      });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  }
+
+  useEffect(() => {
+    const t = setTimeout(fireHeroConfetti, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div>
       {/* ===== Hero ===== */}
-      <div className="max-w-6xl mx-auto px-4 pt-20 pb-12 text-center">
+      <div className="relative max-w-6xl mx-auto px-4 pt-20 pb-12 text-center">
+        {/* Kanvas confetti di belakang judul */}
+        <canvas
+          ref={confettiCanvasRef}
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+        />
+
         <motion.div
           initial={{ y: -16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="inline-flex items-center gap-2 bg-kk-paper border-2 border-kk-ink rounded-full px-4 py-2 font-extrabold text-sm shadow-kk-sm"
+          className="relative z-10 inline-flex items-center gap-2 bg-kk-paper border-2 border-kk-ink rounded-full px-4 py-2 font-extrabold text-sm shadow-kk-sm"
         >
           <FaPencilAlt className="text-kk-coral" /> Belajar coding, rasanya kayak main
         </motion.div>
@@ -103,7 +152,8 @@ export default function HomePage({ onSelect }) {
         <motion.h1
           initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="font-display font-bold leading-[0.95] text-7xl md:text-[8rem] mt-6"
+          onMouseEnter={fireHeroConfetti}
+          className="relative z-10 font-display font-bold leading-[0.95] text-7xl md:text-[8rem] mt-6 cursor-default"
         >
           <span className="text-kk-indigo">Kode</span>
           <span className="text-kk-coral">Kids</span>
@@ -113,7 +163,7 @@ export default function HomePage({ onSelect }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-kk-inksoft font-semibold text-lg mt-5 max-w-xl mx-auto leading-relaxed"
+          className="relative z-10 text-kk-inksoft font-semibold text-lg mt-5 max-w-xl mx-auto leading-relaxed"
         >
           Dari puzzle lucu sampai nulis kode beneran — semua ada di sini.
           Pilih kelompok usiamu dan mulai petualanganmu!
@@ -124,7 +174,7 @@ export default function HomePage({ onSelect }) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="flex justify-center gap-3.5 mt-9 flex-wrap"
+          className="relative z-10 flex justify-center gap-3.5 mt-9 flex-wrap"
         >
           <span className="flex items-center gap-2 bg-kk-paper border-[2.5px] border-kk-ink rounded-full px-5 py-2.5 text-sm font-extrabold shadow-kk-md">
             <span className="w-2.5 h-2.5 rounded-full bg-kk-indigo" /> 15 Materi
@@ -213,29 +263,35 @@ export default function HomePage({ onSelect }) {
       {/* ===== Terminal animasi ===== */}
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="bg-kk-ink rounded-3xl border-[3px] border-kk-ink py-10 px-4 md:px-10">
-          <SectionHead title="Rasa Programmer Asli" sub="Begini suasana layar kalau kamu sudah jadi programmer" />
-          <div className="[&_h2]:!text-kk-cream [&_p]:!text-kk-cream/65 max-w-2xl mx-auto">
+          <SectionHead
+            light
+            title="Rasa Programmer Asli"
+            sub="Begini suasana layar kalau kamu sudah jadi programmer"
+          />
+          <div className="max-w-2xl mx-auto">
             <Terminal>
-              <TypingAnimation delay={400}>&gt; mulai belajar koding...</TypingAnimation>
+              <TypingAnimation delay={400} className="text-white">
+                &gt; mulai belajar koding...
+              </TypingAnimation>
 
-              <AnimatedSpan delay={1600} className="text-green-500">
+              <AnimatedSpan delay={1600} className="text-emerald-400">
                 ✓ Memuat modul materi keren.
               </AnimatedSpan>
 
-              <AnimatedSpan delay={2200} className="text-green-500">
+              <AnimatedSpan delay={2200} className="text-emerald-400">
                 ✓ Menyiapkan tantangan level 1.
               </AnimatedSpan>
 
-              <AnimatedSpan delay={2800} className="text-green-500">
+              <AnimatedSpan delay={2800} className="text-emerald-400">
                 ✓ Menghubungkan KodeBot AI assistant.
               </AnimatedSpan>
 
-              <AnimatedSpan delay={3400} className="text-blue-500">
+              <AnimatedSpan delay={3400} className="text-sky-300">
                 <span>ℹ Progres kamu tersimpan:</span>
-                <span className="pl-2">120 poin • Level 3</span>
+                <span className="pl-2 text-white">120 poin • Level 3</span>
               </AnimatedSpan>
 
-              <TypingAnimation delay={4200} className="text-emerald-300">
+              <TypingAnimation delay={4200} className="text-emerald-300 font-bold">
                 Selamat! Kamu siap jadi programmer. 🚀
               </TypingAnimation>
             </Terminal>
