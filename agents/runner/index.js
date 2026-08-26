@@ -9,8 +9,14 @@ const CORS_HEADERS = {
 };
 
 function buildPythonTestHarness(tests, userCode) {
-  const calls = tests
+  // Dua jenis test yang didukung:
+  // - { call, expected }  : bandingkan return value dari ekspresi
+  // - { output }          : bandingkan seluruh teks yang di-print (trim)
+  const checks = tests
     .map((t, i) => {
+      if (typeof t.output === "string") {
+        return `    _results.append(("test${i}", _printed.strip(), ${JSON.stringify(t.output)}))`;
+      }
       const isBool = /^(True|False)$/.test(String(t.expected));
       const isNumber = /^-?\d+(\.\d+)?$/.test(String(t.expected));
       const expected =
@@ -24,14 +30,20 @@ function buildPythonTestHarness(tests, userCode) {
   const indentedUserCode = userCode
     .replace(/\n+$/, "")
     .split("\n")
-    .map((l) => ("    " + l).trimEnd())
+    .map((l) => ("        " + l).trimEnd())
     .join("\n");
 
   return `import json as _json
+import io as _io
+import contextlib as _contextlib
 _results = []
+_printed = ""
 try:
+    _buf = _io.StringIO()
+    with _contextlib.redirect_stdout(_buf):
 ${indentedUserCode}
-${calls}
+        _printed = _buf.getvalue()
+${checks}
 except Exception as _e:
     print(_json.dumps({"passed": False, "message": f"Error: {_e}"}))
 else:
@@ -43,8 +55,13 @@ else:
 }
 
 function buildJavaScriptTestHarness(tests, userCode) {
-  const calls = tests
+  // Sama seperti Python: { call, expected } untuk return value,
+  // { output } untuk mengecek hasil console.log (digabung dengan newline, trim).
+  const checks = tests
     .map((t, i) => {
+      if (typeof t.output === "string") {
+        return `  __results.push(["test${i}", __printed.trim(), ${JSON.stringify(t.output)}]);`;
+      }
       const expected = JSON.stringify(t.expected);
       return `  __results.push(["test${i}", JSON.stringify(${t.call}), JSON.stringify(${expected})]);`;
     })
@@ -58,9 +75,17 @@ function buildJavaScriptTestHarness(tests, userCode) {
 
   return `const __results = [];
 let __error = null;
-try {
+  try {
+  let __lines = [];
+  const __origLog = console.log;
+  console.log = (...__a) => { __lines.push(__a.map((v) => String(v)).join(" ")); };
+  try {
 ${indentedUserCode}
-${calls}
+  var __printed = __lines.join("\\n");
+${checks}
+  } finally {
+    console.log = __origLog;
+  }
 } catch (__e) {
   __error = __e;
 }
@@ -125,8 +150,7 @@ async function execFileInSandbox(context, language, fileName, timeout) {
   return out;
 }
 
-export async function onRequest(context) {
-  if (context.request.method === "OPTIONS") {
+export async function onRequest(context) {  if (context.request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
@@ -214,7 +238,20 @@ export async function onRequest(context) {
     }
 
     const jsonMatch = output.match(/\{[\s\S]*\}/);
-    const verdict = jsonMatch ? JSON.parse(jsonMatch[0]) : { passed: false, message: "Tidak ada output dari sandbox" };
+    const verdict = jsonMatch
+      ? JSON.parse(jsonMatch[0])
+      : /SyntaxError|IndentationError/i.test(output)
+        ? {
+            passed: false,
+            message:
+              "Ada kesalahan penulisan kode (syntax error). Coba periksa tanda kutip, titik dua, dan spasi indentasimu ya!",
+          }
+        : /Traceback|Error/i.test(output)
+          ? {
+              passed: false,
+              message: "Kode error saat dijalankan. Periksa sintaks programmu.",
+            }
+          : { passed: false, message: "Tidak ada output dari sandbox" };
 
     return new Response(
       JSON.stringify({ ok: true, verdict, output: output.slice(0, 1000) }),
@@ -227,3 +264,6 @@ export async function onRequest(context) {
     });
   }
 }
+
+// Diekspor untuk pengujian lokal harness
+export { buildPythonTestHarness, buildJavaScriptTestHarness };

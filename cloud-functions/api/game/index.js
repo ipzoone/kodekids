@@ -60,6 +60,7 @@ const GameState = Annotation.Root({
   ageGroup: Annotation({ reducer: (_, v) => v, default: () => "8-10" }),
   language: Annotation({ reducer: (_, v) => v, default: () => "" }),
   level: Annotation({ reducer: (_, v) => v, default: () => 1 }),
+  step: Annotation({ reducer: (_, v) => v, default: () => 1 }),
   score: Annotation({ reducer: (_, v) => v, default: () => 0 }),
   attemptCount: Annotation({ reducer: (_, v) => v, default: () => 0 }),
   lastError: Annotation({ reducer: (_, v) => v, default: () => "" }),
@@ -83,7 +84,12 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
     const ageCfg = await getAgeConfigFromDb(cfg, state.ageGroup);
     const maxLevels = ageCfg?.max_levels || 5;
     const levelIndex = Math.min(state.level, maxLevels) - 1;
-    const row = await getChallengeFromDb(cfg, state.ageGroup, Math.min(state.level, maxLevels));
+    const row = await getChallengeFromDb(
+      cfg,
+      state.ageGroup,
+      Math.min(state.level, maxLevels),
+      state.step,
+    );
     if (!row) {
       throw new Error(`Soal untuk ${state.ageGroup} level ${state.level} tidak ditemukan di DB.`);
     }
@@ -91,15 +97,22 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
     // 5-7 & 11-15 pakai template deterministik (andal untuk anak-anak),
     // 8-10 diracik LLM lalu divalidasi fallback template.
     if (state.ageGroup === "5-7") {
-      const targetLength = Math.min(2 + state.level, 5);
-      const target = Array.from({ length: targetLength }, (_, i) => row.data.moves[i % row.data.moves.length]);
+      // Panjang urutan diambil dari data soal (makin tinggi level/step makin panjang),
+      // dengan rotasi pola biar tiap soal dalam satu level terasa berbeda.
+      const targetLength = row.data.length || Math.min(2 + state.level, 5);
+      const moves = row.data.moves;
+      const offset = ((state.step - 1) * 2) % moves.length;
+      const target = Array.from(
+        { length: targetLength },
+        (_, i) => moves[(i + offset) % moves.length],
+      );
       return {
         challenge: {
           type: "sequence",
           level: state.level,
           story: row.body,
           goalDesc: `susun langkah dengan benar (${targetLength} langkah)`,
-          availableIcons: row.data.moves,
+          availableIcons: moves,
           goalIcon: row.data.goalIcon,
           target,
         },
@@ -113,6 +126,7 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
         challenge: {
           type: "code",
           level: state.level,
+          step: state.step,
           language: lang,
           title: row.title,
           description: langData.description || row.body,
@@ -142,6 +156,7 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
       challenge: {
         type: "blockly",
         level: state.level,
+        step: state.step,
         language: state.language || "",
         title: row.title,
         story: llmStory || `Petualangan koding level ${state.level}!`,
@@ -298,6 +313,7 @@ export async function onRequest(context) {
     ageGroup,
     language: body.language === "javascript" ? "javascript" : body.language === "python" ? "python" : "",
     level: Number(body.level) > 0 ? Number(body.level) : 1,
+    step: Number(body.step) > 0 ? Number(body.step) : 1,
     score: Number(body.score) || 0,
     attemptCount: Number(body.attemptCount) || 0,
     lastError: body.lastError || "",
@@ -317,6 +333,7 @@ export async function onRequest(context) {
       ageGroup: inputState.ageGroup,
       language: inputState.language,
       level: inputState.level,
+      step: inputState.step,
       score: inputState.score,
     };
 
@@ -335,9 +352,14 @@ export async function onRequest(context) {
     };
 
     if (response.correct) {
-      response.score = inputState.score + 10 * inputState.level;
-      response.level = Math.min(inputState.level + 1, maxLevels);
-      response.finished = inputState.level >= maxLevels;
+      // Progres per soal (step): 5 soal per level. Soal berikutnya terkunci
+      // sampai soal sebelumnya benar — jadi alurnya selalu linear.
+      const STEPS_PER_LEVEL = 5;
+      const lastStep = inputState.step >= STEPS_PER_LEVEL;
+      response.level = lastStep ? Math.min(inputState.level + 1, maxLevels) : inputState.level;
+      response.step = lastStep ? 1 : inputState.step + 1;
+      response.finished = inputState.level >= maxLevels && lastStep;
+      response.score = inputState.score + 10 * inputState.level + 2 * (inputState.step - 1);
     } else {
       response.attemptCount = inputState.attemptCount + 1;
       response.lastError = response.feedback.slice(0, 200);

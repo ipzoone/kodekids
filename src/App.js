@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import HomePage from "./components/HomePage";
 import ModeSelect from "./components/ModeSelect";
+import LevelSelect from "./components/LevelSelect";
 import Materials from "./components/Materials";
 import Playground from "./components/Playground";
 import Navbar from "./components/Navbar";
@@ -10,7 +11,7 @@ import { DotPattern } from "./components/magicui/DotPattern";
 import GameBlockPuzzle from "./components/GameBlockPuzzle";
 import GameBlockly from "./components/GameBlockly";
 import GameCode from "./components/GameCode";
-import { loadStoredUser, storeUser } from "./services/api";
+import { loadStoredUser, storeUser, loadProgress } from "./services/api";
 
 const GAMES = {
   "5-7": GameBlockPuzzle,
@@ -24,16 +25,25 @@ export default function App() {
   const [ageGroup, setAgeGroup] = useState(null);
   const [mode, setMode] = useState(null);
   const [pendingMode, setPendingMode] = useState(null);
+  const [challengeLevel, setChallengeLevel] = useState(null); // level yang dipilih di layar pilih level
 
   function goHome() {
     setPendingMode(null);
     setMode(null);
     setAgeGroup(null);
     setAuthMode(null);
+    setChallengeLevel(null);
+  }
+
+  // Keluar dari game kembali ke layar pilih mode (umur tetap tersimpan)
+  function backToModeSelect() {
+    setChallengeLevel(null);
+    setMode(null);
   }
 
   function handleNavigate(target) {
     setAuthMode(null);
+    setChallengeLevel(null);
     if (target === "home") {
       goHome();
       return;
@@ -104,9 +114,31 @@ export default function App() {
     screen = <Playground onHome={goHome} user={user} />;
     navActive = "playground";
   } else if (ageGroup && mode === "challenge") {
-    const Game = GAMES[ageGroup];
-    screen = <Game onHome={() => setMode(null)} />;
-    navActive = "challenge";
+    // Level belum dipilih -> tampilkan layar pilih level (yang terkunci tidak bisa dibuka)
+    if (challengeLevel == null) {
+      screen = (
+        <LevelSelect
+          ageGroup={ageGroup}
+          onBack={backToModeSelect}
+          onSelect={(lvl) => setChallengeLevel(lvl)}
+        />
+      );
+      navActive = "challenge";
+    } else {
+      const Game = GAMES[ageGroup];
+      const prog = loadProgress()[ageGroup] || {};
+      // Main ulang level lama = mode latihan: progres & poin tersimpan tidak terganggu
+      const practice = challengeLevel < (prog.level || 1);
+      screen = (
+        <Game
+          key={`${ageGroup}-L${challengeLevel}-${practice ? "latihan" : "utama"}`}
+          onHome={backToModeSelect}
+          initialLevel={challengeLevel}
+          practice={practice}
+        />
+      );
+      navActive = "challenge";
+    }
   } else if (ageGroup) {
     screen = (
       <ModeSelect ageGroup={ageGroup} onBack={goHome} onMode={(m) => setMode(m)} />

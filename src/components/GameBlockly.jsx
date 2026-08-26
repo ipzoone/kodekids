@@ -9,6 +9,7 @@ import { callGame, loadProgress, saveAgeProgress } from "../services/api";
 import { Header, Centered, LanguagePicker } from "./Shared";
 
 const AGE = "8-10";
+const STEPS_PER_LEVEL = 5;
 
 const LANGUAGES = [
   { id: "javascript", name: "JavaScript", Icon: SiJavascript, gradient: "from-yellow-400 to-amber-500" },
@@ -94,9 +95,12 @@ function makeToolbox() {
   };
 }
 
-export default function GameBlockly({ onHome }) {
+export default function GameBlockly({ onHome, initialLevel, practice = false }) {
   const saved = loadProgress()[AGE] || {};
-  const [level, setLevel] = useState(saved.level || 1);
+  const [level, setLevel] = useState((initialLevel ?? saved.level) || 1);
+  const [step, setStep] = useState(
+    initialLevel != null && initialLevel !== saved.level ? 1 : saved.step || 1,
+  );
   const [totalScore, setTotalScore] = useState(saved.totalScore || 0);
   const [challenge, setChallenge] = useState(null);
   const [language, setLanguage] = useState(null);
@@ -110,7 +114,7 @@ export default function GameBlockly({ onHome }) {
   const containerRef = useRef(null);
 
   // Fungsi untuk memulai challenge baru
-  async function fetchChallenge(lvl, lang) {
+  async function fetchChallenge(lvl, lang, stp) {
     setLoading(true);
     setFeedback(null);
     setHint("");
@@ -120,6 +124,7 @@ export default function GameBlockly({ onHome }) {
         ageGroup: AGE,
         language: lang,
         level: lvl,
+        step: stp,
         score: 0,
         attemptCount: 0,
       });
@@ -132,9 +137,9 @@ export default function GameBlockly({ onHome }) {
   }
 
   useEffect(() => {
-    fetchChallenge(level, language || "javascript");
+    fetchChallenge(level, language || "javascript", step);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language, level]);
+  }, [language, level, step]);
 
   // Inisialisasi Blockly workspace saat challenge berubah + preview kode
   const [previewCode, setPreviewCode] = useState("");
@@ -198,6 +203,7 @@ export default function GameBlockly({ onHome }) {
         ageGroup: AGE,
         language,
         level,
+        step,
         score: totalScore,
         attemptCount,
         lastError: feedback?.text || "",
@@ -207,16 +213,27 @@ export default function GameBlockly({ onHome }) {
       setFeedback({ ok: res.correct, text: res.feedback });
       setHint(res.hint || "");
       if (res.correct) {
-        const newTotal = totalScore + 10 * level;
+        const newTotal = res.score ?? totalScore + 10 * level;
+        const newLevel = res.level ?? level;
+        const newStep = res.step ?? step;
         setTotalScore(newTotal);
-        saveAgeProgress(AGE, { level: res.finished ? 1 : res.level, totalScore: newTotal });
+        if (!practice) {
+          saveAgeProgress(AGE, {
+            level: newLevel,
+            step: newStep,
+            totalScore: newTotal,
+          });
+        }
         setTimeout(() => {
           if (res.finished) setFinished(true);
-          else setLevel(res.level);
+          else {
+            setLevel(newLevel);
+            setStep(newStep);
+          }
         }, 1800);
       } else {
         setAttemptCount((a) => a + 1);
-        saveAgeProgress(AGE, { level, totalScore });
+        if (!practice) saveAgeProgress(AGE, { level, step, totalScore });
       }
     } catch (e) {
       setFeedback({ ok: false, text: "Gagal mengirim: " + e.message });
@@ -228,8 +245,14 @@ export default function GameBlockly({ onHome }) {
   function restart() {
     setFinished(false);
     setTotalScore(0);
-    setLevel(1);
-    saveAgeProgress(AGE, { level: 1, totalScore: 0 });
+    if (practice) {
+      // Mode latihan: ulangi level yang sama tanpa menyentuh progres tersimpan
+      setStep(1);
+    } else {
+      setLevel(1);
+      setStep(1);
+      saveAgeProgress(AGE, { level: 1, step: 1, totalScore: 0 });
+    }
     setLanguage(null);
   }
 
@@ -237,8 +260,14 @@ export default function GameBlockly({ onHome }) {
     return (
       <Centered>
         <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <h2 className="font-display font-semibold text-3xl text-kk-ink mb-2">Luar Biasa!</h2>
-          <p className="text-kk-inksoft font-bold mb-4">Semua tantangan Blockly selesai!</p>
+          <h2 className="font-display font-semibold text-3xl text-kk-ink mb-2">
+            {practice ? "Latihan Selesai!" : "Luar Biasa!"}
+          </h2>
+          <p className="text-kk-inksoft font-bold mb-4">
+            {practice
+              ? `Level ${level} selesai kamu mainkan lagi. Progres utamamu tetap aman!`
+              : "Semua tantangan Blockly selesai!"}
+          </p>
           <p className="text-5xl font-extrabold text-amber-500 mb-6 flex items-center justify-center gap-2">
             <FaStar /> {totalScore}
           </p>
@@ -277,9 +306,25 @@ export default function GameBlockly({ onHome }) {
       {challenge && (
         <>
           <div className="bg-kk-paper border-[2.5px] border-kk-ink shadow-kk-sm rounded-2xl p-4 mb-4">
-            <div className="font-bold text-lg mb-1 text-kk-ink">
-              {challenge.title}{" "}
-              <span className="text-kk-inksoft text-sm font-normal">Level {level}</span>
+            <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
+              <div className="font-bold text-lg text-kk-ink">
+                {challenge.title}{" "}
+                <span className="text-kk-inksoft text-sm font-normal">
+                  Level {level} • Soal {step}/{STEPS_PER_LEVEL}
+                </span>
+              </div>
+              {/* Progres soal dalam level ini */}
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: STEPS_PER_LEVEL }, (_, i) => i + 1).map((n) => (
+                  <span
+                    key={n}
+                    title={n < step ? "Selesai" : n === step ? "Sedang dikerjakan" : "Terisi setelah soal ini benar"}
+                    className={`w-3 h-3 rounded-full border-2 border-kk-ink ${
+                      n < step ? "bg-emerald-500" : n === step ? "bg-kk-sun" : "bg-white"
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
             <div className="text-kk-inksoft italic text-sm mb-2">{challenge.story}</div>
             <div className="text-sm text-kk-ink">{challenge.desc}</div>

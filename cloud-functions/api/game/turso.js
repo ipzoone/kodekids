@@ -76,11 +76,12 @@ export async function ensureSchema(cfg) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       age_group TEXT NOT NULL,
       level INTEGER NOT NULL,
+      step INTEGER NOT NULL DEFAULT 1,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       body TEXT NOT NULL DEFAULT '',
       data TEXT NOT NULL DEFAULT '{}',
-      UNIQUE(age_group, level)
+      UNIQUE(age_group, level, step)
     )`
   );
   await query(
@@ -108,14 +109,22 @@ export async function getAgeConfigFromDb(cfg, ageGroup) {
   return rows[0] || null;
 }
 
-export async function getChallengeFromDb(cfg, ageGroup, level) {
+export async function getChallengeFromDb(cfg, ageGroup, level, step = 1) {
   const rows = await query(
     cfg,
-    "SELECT type, title, body, data FROM challenges WHERE age_group = ? AND level = ?",
-    [ageGroup, level]
+    "SELECT type, title, body, data FROM challenges WHERE age_group = ? AND level = ? AND step = ?",
+    [ageGroup, level, step]
   );
-  if (!rows.length) return null;
-  const row = rows[0];
+  // Fallback: kalau soal dengan step itu tidak ada (mis. data lama), ambil step pertama
+  const source = rows.length
+    ? rows
+    : await query(
+        cfg,
+        "SELECT type, title, body, data FROM challenges WHERE age_group = ? AND level = ? ORDER BY step LIMIT 1",
+        [ageGroup, level]
+      );
+  if (!source.length) return null;
+  const row = source[0];
   let data = {};
   try {
     data = JSON.parse(row.data);

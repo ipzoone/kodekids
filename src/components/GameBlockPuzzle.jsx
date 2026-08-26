@@ -17,6 +17,7 @@ import { callGame, loadProgress, saveAgeProgress } from "../services/api";
 import { Header, Centered } from "./Shared";
 
 const AGE = "5-7";
+const STEPS_PER_LEVEL = 5;
 
 // Peta ikon game — backend mengirim identifier, frontend yang merender
 export const GAME_ICONS = {
@@ -36,9 +37,13 @@ function GameIcon({ name, className }) {
   return <Icon className={className} />;
 }
 
-export default function GameBlockPuzzle({ onHome }) {
+export default function GameBlockPuzzle({ onHome, initialLevel, practice = false }) {
   const saved = loadProgress()[AGE] || {};
-  const [level, setLevel] = useState(saved.level || 1);
+  const [level, setLevel] = useState((initialLevel ?? saved.level) || 1);
+  // Latihan level lama selalu mulai dari soal pertama; melanjutkan level terbuka lanjut dari soal tersimpan
+  const [step, setStep] = useState(
+    initialLevel != null && initialLevel !== saved.level ? 1 : saved.step || 1,
+  );
   const [totalScore, setTotalScore] = useState(saved.totalScore || 0);
   const [challenge, setChallenge] = useState(null);
   const [sequence, setSequence] = useState([]);
@@ -49,7 +54,7 @@ export default function GameBlockPuzzle({ onHome }) {
   const [finished, setFinished] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
-  async function fetchChallenge(lvl) {
+  async function fetchChallenge(lvl, stp) {
     setLoading(true);
     setFeedback(null);
     setHint("");
@@ -59,6 +64,7 @@ export default function GameBlockPuzzle({ onHome }) {
         action: "start",
         ageGroup: AGE,
         level: lvl,
+        step: stp,
         score: 0,
         attemptCount: 0,
       });
@@ -71,9 +77,9 @@ export default function GameBlockPuzzle({ onHome }) {
   }
 
   useEffect(() => {
-    fetchChallenge(level);
+    fetchChallenge(level, step);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level]);
+  }, [level, step]);
 
   function addIcon(icon) {
     if (!challenge || sequence.length >= challenge.target.length) return;
@@ -99,6 +105,7 @@ export default function GameBlockPuzzle({ onHome }) {
         action: "submit",
         ageGroup: AGE,
         level,
+        step,
         score: totalScore,
         attemptCount,
         lastError: feedback?.text || "",
@@ -108,20 +115,29 @@ export default function GameBlockPuzzle({ onHome }) {
       setFeedback({ ok: res.correct, text: res.feedback });
       setHint(res.hint || "");
       if (res.correct) {
-        const newTotal = totalScore + 10 * level;
+        const newTotal = res.score ?? totalScore + 10 * level;
+        const newLevel = res.level ?? level;
+        const newStep = res.step ?? step;
         setTotalScore(newTotal);
-        saveAgeProgress(AGE, { level: res.finished ? 1 : res.level, totalScore: newTotal });
+        if (!practice) {
+          saveAgeProgress(AGE, {
+            level: newLevel,
+            step: newStep,
+            totalScore: newTotal,
+          });
+        }
         setTimeout(() => {
           if (res.finished) {
             setFinished(true);
           } else {
-            setLevel(res.level);
+            setLevel(newLevel);
+            setStep(newStep);
           }
         }, 1600);
       } else {
         const nextAttempt = attemptCount + 1;
         setAttemptCount(nextAttempt);
-        saveAgeProgress(AGE, { level, totalScore });
+        if (!practice) saveAgeProgress(AGE, { level, step, totalScore });
       }
     } catch (e) {
       setFeedback({ ok: false, text: "Gagal mengirim: " + e.message });
@@ -133,16 +149,28 @@ export default function GameBlockPuzzle({ onHome }) {
   function restart() {
     setFinished(false);
     setTotalScore(0);
-    setLevel(1);
-    saveAgeProgress(AGE, { level: 1, totalScore: 0 });
+    if (practice) {
+      // Mode latihan: ulangi level yang sama tanpa menyentuh progres tersimpan
+      setStep(1);
+    } else {
+      setLevel(1);
+      setStep(1);
+      saveAgeProgress(AGE, { level: 1, step: 1, totalScore: 0 });
+    }
   }
 
   if (finished) {
     return (
       <Centered>
         <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <h2 className="font-display font-semibold text-3xl text-kk-ink mb-2">Selamat!</h2>
-          <p className="text-kk-inksoft font-bold mb-4">Kamu menyelesaikan semua puzzle!</p>
+          <h2 className="font-display font-semibold text-3xl text-kk-ink mb-2">
+            {practice ? "Latihan Selesai!" : "Selamat!"}
+          </h2>
+          <p className="text-kk-inksoft font-bold mb-4">
+            {practice
+              ? `Level ${level} selesai kamu mainkan lagi. Progres utamamu tetap aman!`
+              : "Kamu menyelesaikan semua puzzle!"}
+          </p>
           <p className="text-5xl font-extrabold text-amber-500 mb-6 flex items-center justify-center gap-2">
             <FaStar /> {totalScore}
           </p>
@@ -167,8 +195,27 @@ export default function GameBlockPuzzle({ onHome }) {
             animate={{ x: 0, opacity: 1 }}
             className="bg-kk-paper border-[2.5px] border-kk-ink shadow-kk-sm rounded-2xl p-4 mb-4 text-lg text-kk-ink"
           >
-            {challenge.story}{" "}
-            <span className="text-kk-inksoft text-sm font-semibold">({challenge.goalDesc})</span>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span>
+                {challenge.story}{" "}
+                <span className="text-kk-inksoft text-sm font-semibold">({challenge.goalDesc})</span>
+              </span>
+              {/* Progres soal dalam level ini */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {Array.from({ length: STEPS_PER_LEVEL }, (_, i) => i + 1).map((n) => (
+                  <span
+                    key={n}
+                    title={n < step ? "Selesai" : n === step ? "Sedang dikerjakan" : "Terisi setelah soal ini benar"}
+                    className={`w-3 h-3 rounded-full border-2 border-kk-ink ${
+                      n < step ? "bg-emerald-500" : n === step ? "bg-kk-sun" : "bg-white"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="text-kk-inksoft text-xs font-bold mt-1.5 uppercase tracking-wide">
+              Level {level} · Soal {step}/{STEPS_PER_LEVEL}
+            </div>
           </motion.div>
 
           {/* Pola target */}

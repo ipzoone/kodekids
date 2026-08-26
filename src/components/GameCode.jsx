@@ -7,6 +7,7 @@ import { callGame, callRunner, loadProgress, saveAgeProgress } from "../services
 import { Header, Centered, LanguagePicker } from "./Shared";
 
 const AGE = "11-15";
+const STEPS_PER_LEVEL = 5;
 
 const LANGUAGES = [
   {
@@ -25,10 +26,13 @@ const LANGUAGES = [
   },
 ];
 
-export default function GameCode({ onHome }) {
+export default function GameCode({ onHome, initialLevel, practice = false }) {
   const saved = loadProgress()[AGE] || {};
   const [language, setLanguage] = useState(null);
-  const [level, setLevel] = useState(saved.level || 1);
+  const [level, setLevel] = useState((initialLevel ?? saved.level) || 1);
+  const [step, setStep] = useState(
+    initialLevel != null && initialLevel !== saved.level ? 1 : saved.step || 1,
+  );
   const [totalScore, setTotalScore] = useState(saved.totalScore || 0);
   const [challenge, setChallenge] = useState(null);
   const [code, setCode] = useState("");
@@ -60,7 +64,7 @@ export default function GameCode({ onHome }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, language]);
 
-  async function fetchChallenge(lvl, lang) {
+  async function fetchChallenge(lvl, lang, stp) {
     setLoading(true);
     setFeedback(null);
     setHint("");
@@ -71,6 +75,7 @@ export default function GameCode({ onHome }) {
         ageGroup: AGE,
         language: lang,
         level: lvl,
+        step: stp,
         score: 0,
         attemptCount: 0,
       });
@@ -85,14 +90,14 @@ export default function GameCode({ onHome }) {
 
   function pickLanguage(lang) {
     setLanguage(lang);
-    fetchChallenge(level, lang);
+    fetchChallenge(level, lang, step);
   }
 
   useEffect(() => {
-    // fetchChallenge dipanggil dari pickLanguage / naik level
-    if (language && level > 1) fetchChallenge(level, language);
+    // fetchChallenge dipanggil dari pickLanguage / naik level atau lanjut soal
+    if (language && (level > 1 || step > 1)) fetchChallenge(level, language, step);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level]);
+  }, [level, step]);
 
   async function submit() {
     if (!challenge) return;
@@ -113,6 +118,7 @@ export default function GameCode({ onHome }) {
         ageGroup: AGE,
         language,
         level,
+        step,
         score: totalScore,
         attemptCount,
         lastError: (sandboxOutput || feedback?.text || "").slice(0, 200),
@@ -123,16 +129,27 @@ export default function GameCode({ onHome }) {
       setHint(res.hint || "");
       setSandboxOutput(res.sandboxOutput || "");
       if (res.correct) {
-        const newTotal = totalScore + 10 * level;
+        const newTotal = res.score ?? totalScore + 10 * level;
+        const newLevel = res.level ?? level;
+        const newStep = res.step ?? step;
         setTotalScore(newTotal);
-        saveAgeProgress(AGE, { level: res.finished ? 1 : res.level, totalScore: newTotal });
+        if (!practice) {
+          saveAgeProgress(AGE, {
+            level: newLevel,
+            step: newStep,
+            totalScore: newTotal,
+          });
+        }
         setTimeout(() => {
           if (res.finished) setFinished(true);
-          else setLevel(res.level);
+          else {
+            setLevel(newLevel);
+            setStep(newStep);
+          }
         }, 1800);
       } else {
         setAttemptCount((a) => a + 1);
-        saveAgeProgress(AGE, { level, totalScore });
+        if (!practice) saveAgeProgress(AGE, { level, step, totalScore });
       }
     } catch (e) {
       setFeedback({ ok: false, text: "Gagal mengirim: " + e.message });
@@ -144,8 +161,14 @@ export default function GameCode({ onHome }) {
   function restart() {
     setFinished(false);
     setTotalScore(0);
-    setLevel(1);
-    saveAgeProgress(AGE, { level: 1, totalScore: 0 });
+    if (practice) {
+      // Mode latihan: ulangi level yang sama tanpa menyentuh progres tersimpan
+      setStep(1);
+    } else {
+      setLevel(1);
+      setStep(1);
+      saveAgeProgress(AGE, { level: 1, step: 1, totalScore: 0 });
+    }
     setLanguage(null); // kembali ke pemilih bahasa
   }
 
@@ -166,9 +189,13 @@ export default function GameCode({ onHome }) {
     return (
       <Centered>
         <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <h2 className="font-display font-semibold text-3xl text-kk-ink mb-2">Coding Master!</h2>
+          <h2 className="font-display font-semibold text-3xl text-kk-ink mb-2">
+            {practice ? "Latihan Selesai!" : "Coding Master!"}
+          </h2>
           <p className="text-kk-inksoft font-bold mb-4">
-            Semua tantangan {langConfig?.name} berhasil kamu taklukkan!
+            {practice
+              ? `Level ${level} selesai kamu mainkan lagi. Progres utamamu tetap aman!`
+              : `Semua tantangan ${langConfig?.name} berhasil kamu taklukkan!`}
           </p>
           <p className="text-5xl font-extrabold text-amber-500 mb-6 flex items-center justify-center gap-2">
             <FaStar /> {totalScore}
@@ -195,11 +222,25 @@ export default function GameCode({ onHome }) {
       {challenge && (
         <>
           <div className="bg-kk-paper border-[2.5px] border-kk-ink shadow-kk-sm rounded-2xl p-4 mb-4">
-            <div className="font-bold text-lg mb-1 text-kk-ink">
-              {challenge.title}{" "}
-              <span className="text-kk-inksoft text-sm font-normal">
-                Level {level} • {langConfig?.name}
-              </span>
+            <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
+              <div className="font-bold text-lg text-kk-ink">
+                {challenge.title}{" "}
+                <span className="text-kk-inksoft text-sm font-normal">
+                  Level {level} • Soal {step}/{STEPS_PER_LEVEL} • {langConfig?.name}
+                </span>
+              </div>
+              {/* Progres soal dalam level ini */}
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: STEPS_PER_LEVEL }, (_, i) => i + 1).map((n) => (
+                  <span
+                    key={n}
+                    title={n < step ? "Selesai" : n === step ? "Sedang dikerjakan" : "Terisi setelah soal ini benar"}
+                    className={`w-3 h-3 rounded-full border-2 border-kk-ink ${
+                      n < step ? "bg-emerald-500" : n === step ? "bg-kk-sun" : "bg-white"
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
             <pre className="text-sm whitespace-pre-wrap font-sans text-kk-ink">
               {challenge.description}
