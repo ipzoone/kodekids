@@ -72,40 +72,40 @@ const CHALLENGES = [
   // =====================================================================
   // ---------- 5-7: Block Puzzle — 5 level x 5 soal ----------
   // =====================================================================
-  // Level 1: Kucing dan Ikan
-  ...puzzleRows(1, ["up", "right", "left"], "fish", [
+    // Level 1: Kucing dan Ikan
+    ...puzzleRows(1, ["up", "down", "left", "right", "cat", "fish", "robot"], "star", [
     { title: "Kucing Laper", body: "Kucingnya kelaparan! Susun langkah supaya sampai ke ikan.", length: 2 },
     { title: "Jalan Panjang", body: "Ikannya agak jauh. Susun langkah yang lebih banyak!", length: 3 },
     { title: "Putar Dulu", body: "Kucingnya harus belok dulu sebelum maju ke ikan.", length: 3 },
     { title: "Labirin Mini", body: "Jalan berbelok-belok. Bantu kucing sampai ke ikan!", length: 4 },
     { title: "Petualangan Besar", body: "Perjalanan terpanjang menuju ikan. Kamu pasti bisa!", length: 5 },
   ]),
-  // Level 2: Robot Pengejar Bintang
-  ...puzzleRows(2, ["up", "down", "right"], "star", [
+    // Level 2: Robot Pengejar Bintang
+    ...puzzleRows(2, ["up", "down", "left", "right", "star", "robot", "carrot"], "fish", [
     { title: "Robot Mulai Jalan", body: "Bantu robot mengambil bintang pertamanya!", length: 2 },
     { title: "Naik Turun", body: "Robot harus naik dan turun untuk mencapai bintang.", length: 3 },
     { title: "Bintang Malas", body: "Bintangnya sembunyi. Rencanakan langkah robot dengan teliti!", length: 4 },
     { title: "Misi Ganda", body: "Perjalanan panjang menuju bintang. Jangan salah urutan ya!", length: 4 },
     { title: "Robot Super", body: "Misi paling seru: langkah terpanjang si robot pengejar bintang!", length: 5 },
   ]),
-  // Level 3: Kelinci dan Wortel
-  ...puzzleRows(3, ["up", "right"], "carrot", [
+    // Level 3: Kelinci dan Wortel
+    ...puzzleRows(3, ["up", "down", "left", "right", "cat", "fish"], "carrot", [
     { title: "Kelinci Kecil", body: "Kelinci mau makan wortel. Susun dua langkahnya!", length: 2 },
     { title: "Lompat Tiga Langkah", body: "Tiga langkah menuju wortel lezat.", length: 3 },
     { title: "Zig Zag Kelinci", body: "Naik, kanan, naik lagi! Bantu kelincinya ya.", length: 4 },
     { title: "Wortel Emas", body: "Wortel emas ada di tempat yang jauh. Susun dengan hati-hati!", length: 4 },
     { title: "Pesta Wortel", body: "Perjalanan terpanjang kelinci ke pesta wortel!", length: 5 },
   ]),
-  // Level 4: Kucing Pulang
-  ...puzzleRows(4, ["left", "up", "right"], "cat", [
+    // Level 4: Kucing Pulang
+    ...puzzleRows(4, ["up", "down", "left", "right", "fish", "cat", "star"], "robot", [
     { title: "Cari Rumah", body: "Bantu anak kucing menemukan rumahnya!", length: 3 },
     { title: "Belok Kiri Dulu", body: "Rumahnya di sebelah kiri. Susun langkahnya!", length: 3 },
     { title: "Melewati Taman", body: "Jalan pulang melewati taman. Ikuti jalurnya!", length: 4 },
     { title: "Hujan Turun", body: "Ceapat pulang sebelum hujan! Susun langkah tercepatmu.", length: 4 },
     { title: "Sampai Rumah", body: "Perjalanan pulang terpanjang. Kelucinya menunggumu!", length: 5 },
   ]),
-  // Level 5: Misi Roket ke Bintang
-  ...puzzleRows(5, ["down", "right", "up"], "star", [
+    // Level 5: Misi Roket ke Bintang
+    ...puzzleRows(5, ["up", "down", "left", "right", "cat", "fish", "robot", "star", "carrot"], "star", [
     { title: "Roket Berangkat", body: "Astronaut kecil berangkat ke bintang. Susun tiga langkahnya!", length: 3 },
     { title: "Melewati Awan", body: "Turun, kanan, lalu naik melewati awan!", length: 4 },
     { title: "Hampir Sampai", body: "Bintang sudah terlihat! Empat langkah lagi.", length: 4 },

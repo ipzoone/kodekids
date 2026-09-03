@@ -38,6 +38,7 @@ const MATERIALS = [
         },
       ],
       tip: "Mainkan game Block Puzzle untuk memberi perintah ke kucing dan robot!",
+      blocks: { moves: ["up", "down", "left", "right", "cat", "fish", "robot"], goalIcon: "star", length: 7 },
     },
   },
   {
@@ -60,6 +61,7 @@ const MATERIALS = [
         },
       ],
       tip: "Di game Block Puzzle, susun ikon dari atas ke bawah sesuai urutan yang diminta ya!",
+      blocks: { moves: ["up", "down", "left", "right", "star", "robot", "carrot"], goalIcon: "fish", length: 7 },
     },
   },
   {
@@ -82,6 +84,7 @@ const MATERIALS = [
         },
       ],
       tip: "Coba perhatikan target puzzle — biasanya ada pola gerakan yang berulang!",
+      blocks: { moves: ["up", "down", "left", "right", "cat", "fish"], goalIcon: "carrot", length: 6 },
     },
   },
   {
@@ -104,6 +107,7 @@ const MATERIALS = [
         },
       ],
       tip: "Sebelum menyusun jawaban, pikirkan dulu: kalau aku maju, apakah aku menabrak?",
+      blocks: { moves: ["up", "down", "left", "right", "fish", "cat", "star"], goalIcon: "robot", length: 7 },
     },
   },
   {
@@ -126,6 +130,7 @@ const MATERIALS = [
         },
       ],
       tip: "Salah itu bukan hal buruk — itu artinya kamu sedang belajar!",
+      blocks: { moves: ["up", "down", "left", "right", "cat", "fish", "robot", "star", "carrot"], goalIcon: "star", length: 9 },
     },
   },
 
@@ -553,6 +558,446 @@ const MATERIALS = [
         },
       ],
       tip: "Infinite loop (loop tak berhenti) terjadi kalau syarat tidak pernah false — hati-hati!",
+    },
+  },
+
+  // ================= 5-7 TAHUN (MATERI 6-10) =================
+  {
+    age_group: "5-7",
+    order_num: 6,
+    title: "Cerita Berantai",
+    subtitle: "Susun cerita dari awal",
+    icon: "FaBookOpen",
+    color: "teal",
+    content: {
+      intro: "Setiap cerita punya awal, tengah, dan akhir. Di koding, urutan yang sama!",
+      sections: [
+        {
+          heading: "Cerita si kucing",
+          body: "Si kucing bangun pagi → sarapan → main → pulang tidur. Kalau urutannya ditukar, ceritanya jadi lucu!",
+        },
+        {
+          heading: "Susun sendiri",
+          body: "Coba tulis cerita sederhana: dimulai dari apa, lalu apa, dan selesai apa. Perlu 3-4 langkah supaya ceritanya lengkap.",
+        },
+      ],
+      tip: "Urutan cerita = urutan perintah komputer. Satu langkah salah, cerita berubah!",
+      blocks: { moves: ["up", "down", "left", "right", "cat", "fish", "robot"], goalIcon: "carrot", length: 7 },
+    },
+  },
+  {
+    age_group: "5-7",
+    order_num: 7,
+    title: "Angka dalam Koding",
+    subtitle: "Hitung dan hitung",
+    icon: "FaCalculator",
+    color: "yellow",
+    content: {
+      intro: "Angka sangat penting dalam koding! Komputer pakai angka untuk menghitung, mengurutkan, dan membandingkan.",
+      sections: [
+        {
+          heading: "Penjumlahan sederhana",
+          body: "Kalau kamu punya 3 apel dan dapat 2 lagi, berapa apelmu? Komputer juga bisa menjumlahkan: 3 + 2 = 5!",
+        },
+        {
+          heading: "Lebih besar, lebih kecil",
+          body: "Mana yang lebih besar, 7 atau 3? Komputer bisa membandingkan dua angka mana saja. Ini berguna buat menentukan siapa yang menang dalam game!",
+        },
+      ],
+      tip: "Coba hitung di jari, lalu bayangkan komputer juga menghitung dengan cara yang sama!",
+      blocks: { moves: ["up", "down", "left", "right", "fish", "star", "carrot"], goalIcon: "robot", length: 7 },
+    },
+  },
+  {
+    age_group: "5-7",
+    order_num: 8,
+    title: "Perulangan Seru",
+    subtitle: "Ulangi sampai selesai",
+    icon: "FaRedo",
+    color: "cyan",
+    content: {
+      intro: "Perulangan artinya mengulang hal yang sama beberapa kali tanpa menulisnya berulang-ulang.",
+      sections: [
+        {
+          heading: "Contoh di kehidupan",
+          body: "Saat lagu kampung, kamu ulangi liriknya sampai akhir. Itu perulangan! Koding juga punya cara untuk mengulang.",
+        },
+        {
+          heading: "Perulangan di game",
+          body: "Kalau kamu harus melompat 5 kali, jangan tulis 5 perintah berbeda. Cukup bilang: 'lompat 5 kali' — itu perulangan!",
+        },
+      ],
+      tip: "Perulangan membuat koding lebih cepat dan rapi. Satu perintah, bisa dipakai berkali-kali!",
+      blocks: { moves: ["up", "down", "left", "right", "cat", "fish", "robot", "star", "carrot"], goalIcon: "robot", length: 9 },
+    },
+  },
+  {
+    age_group: "5-7",
+    order_num: 9,
+    title: "Debugging Level Lanjut",
+    subtitle: "Mencari bug yang licin",
+    icon: "FaBug",
+    color: "orange",
+    content: {
+      intro: "Bug tidak selalu terlihat jelas. Kadang kamu harus teliti dan sabar untuk menemukannya.",
+      sections: [
+        {
+          heading: "Coba jalani satu per satu",
+          body: "Ikuti langkah-langkah program seolah-olah kamu adalah komputer. Jalankan tiap perintah di tempatnya. Langkah mana yang salah?",
+        },
+        {
+          heading: "Perbaiki dan catat",
+          body: "Kalau sudah ketemu bug, perbaiki. Tulis catatan kecil: di mana bug-nya dan bagaimana cara memperbaikinya. Ini jadi pembelajaran!",
+        },
+      ],
+      tip: "Debugging yang sabar membuat program lebih kuat. Setiap bug yang ditemukan membuatmu lebih pintar!",
+      blocks: { moves: ["up", "down", "left", "right", "fish", "cat"], goalIcon: "cat", length: 6 },
+    },
+  },
+  {
+    age_group: "5-7",
+    order_num: 10,
+    title: "Kuasai Semua!",
+    subtitle: "Review lengkap",
+    icon: "FaTrophy",
+    color: "gold",
+    content: {
+      intro: "Sudah belajar banyak hal! Sekarang saatnya mengingat semua materinya.",
+      sections: [
+        {
+          heading: "Apa saja yang sudah dipelajari?",
+          body: "Koding itu perintah untuk komputer. Urutan penting, pola membantu, logika memilih ya/tidak, dan debugging memperbaiki kesalahan. Semua ini adalah fondasi koding!",
+        },
+        {
+          heading: "Siap untuk level berikutnya?",
+          body: "Dengan fondasi ini, kamu sudah siap belajar hal-hal yang lebih seru lagi. Tetap semangat dan jangan berhenti belajar!",
+        },
+      ],
+      tip: "Kamu sudah lebih pintar dari kemarin! Setiap materi yang dipelajari adalah batu loncatan menuju koding yang lebih baik.",
+      blocks: { moves: ["up", "down", "left", "right", "cat", "fish", "robot", "star", "carrot"], goalIcon: "robot", length: 9 },
+    },
+  },
+  {
+    age_group: "8-10",
+    order_num: 6,
+    title: "Teks Tersusun",
+    subtitle: "Manipulasi string",
+    icon: "FaFont",
+    color: "pink",
+    content: {
+      intro: "Teks (string) bisa digabungkan, diubah, dan disusun ulang. Di Python dan JavaScript, teks punya kekuatan yang sama!",
+      sections: [
+        {
+          heading: "Gabungkan teks",
+          body: "Gabungkan dua teks jadi satu: 'Halo' + ' Dunia' = 'Halo Dunia'. Python pakai +, JavaScript juga pakai +.",
+          code: {
+            language: "python",
+            snippet: 'nama = "Sinta"\nsalam = "Halo, " + nama\nprint(salam)',
+          },
+        },
+        {
+          heading: "Tambah teks dengan template literal",
+          body: "Di JavaScript, template literal dengan backtick dan ${} membuat penggabungan lebih rapi:",
+          code: {
+            language: "javascript",
+            snippet: 'let nama = "Sinta";\nconsole.log(`Halo, ${nama}!`);',
+          },
+        },
+        {
+          heading: "Huruf besar dan kecil",
+          body: "Teks bisa diubah jadi semua huruf besar (.upper() di Python, .toUpperCase() di JS) atau kecil (.lower() / .toLowerCase()).",
+        },
+      ],
+      tip: "Teks adalah salah satu tipe data paling sering dipakai di koding!",
+    },
+  },
+  {
+    age_group: "8-10",
+    order_num: 7,
+    title: "Kumpulan Data",
+    subtitle: "Belajar list dan array",
+    icon: "FaList",
+    color: "purple",
+    content: {
+      intro: "Kumpulan data disebut list (Python) atau array (JavaScript). Kalau variabel hanya satu kotak, list adalah rak berisi banyak kotak!",
+      sections: [
+        {
+          heading: "Buat list/array",
+          body: "List berisi beberapa nilam diurutkan. List Python: [1, 2, 3]. Array JavaScript: [1, 2, 3].",
+          code: {
+            language: "python",
+            snippet: 'warnas = ["merah", "biru", "hijau"]\nprint(warnas[0])',
+          },
+        },
+        {
+          heading: "Akses item",
+          body: "Item pertama punya indeks 0 di kedua bahasa: warnas[0] di Python dan colors[0] di JavaScript.",
+          code: {
+            language: "javascript",
+            snippet: 'let colors = ["merah", "biru", "hijau"];\nconsole.log(colors[0]);',
+          },
+        },
+        {
+          heading: "Tambah item baru",
+          body: "Python: .append(). JavaScript: .push(). Tambahkan satu item di akhir list/array.",
+        },
+      ],
+      tip: "List dan array membantu kamu menyimpan banyak data sekaligus — sangat berguna di game dan aplikasi!",
+    },
+  },
+  {
+    age_group: "8-10",
+    order_num: 8,
+    title: "Fungsi Ajaib",
+    subtitle: "Blok kode yang bisa dipanggil",
+    icon: "FaRocket",
+    color: "indigo",
+    content: {
+      intro: "Function adalah blok kode yang bisa dipakai berulang kali tanpa menulis ulang. Di Python def, di JavaScript function.",
+      sections: [
+        {
+          heading: "Buat function sederhana",
+          body: "Function punya nama, bisa menerima parameter, dan menjalankan perintah di dalamnya.",
+          code: {
+            language: "python",
+            snippet: 'def sapa(nama):\n    print(f"Halo, {nama}!")\nsapa("Budi")',
+          },
+        },
+        {
+          heading: "Function di JavaScript",
+          body: "Sama seperti Python, tapi dengan sintaks berbeda:",
+          code: {
+            language: "javascript",
+            snippet: 'function sapa(nama) {\n  console.log(`Halo, ${nama}!`);\n}\nsapa("Budi");',
+          },
+        },
+        {
+          heading: "Kenapa function?",
+          body: "Kalau kamu ingin melakukan hal yang sama berkali-kali, tidak perlu menulis ulang. Cukup panggil function-nya!",
+        },
+      ],
+      tip: "Function membuat koding lebih rapi dan mudah dibaca. Pikirkan function sebagai 'mesin kecil' yang bisa kamu pakai kapan saja!",
+    },
+  },
+  {
+    age_group: "8-10",
+    order_num: 9,
+    title: "Perulangan Bersarang",
+    subtitle: "Loop di dalam loop",
+    icon: "FaLayerGroup",
+    color: "gray",
+    content: {
+      intro: "Perulangan di dalam perulangan disebut nested loop. Ini berguna saat kamu perlu mengulang sesuatu yang juga memiliki perulangan.",
+      sections: [
+        {
+          heading: "Contoh nyata",
+          body: "Bayangkan kamu menggambar 3 baris, masing-masing berisi 5 bintang. Loop luar mengatur baris, loop dalam mengatur bintang.",
+        },
+        {
+          heading: "Contoh kode",
+          body: "Loop luar berjalan 3 kali. Untuk setiap iterasi loop luar, loop dalam berjalan 5 kali — total 15 bintang!",
+          code: {
+            language: "python",
+            snippet: "for i in range(3):\n    for j in range(5):\n        print('*', end='')\n    print()",
+          },
+        },
+        {
+          heading: "Di JavaScript",
+          code: {
+            language: "javascript",
+            snippet: "for (let i = 0; i < 3; i++) {\n  let row = '';\n  for (let j = 0; j < 5; j++) {\n    row += '*';\n  }\n  console.log(row);\n}",
+          },
+        },
+      ],
+      tip: "Nested loop mungkin terlihat rumit, tapi kalau dipecah satu per satu, sangat mudah dipahami!",
+    },
+  },
+  {
+    age_group: "8-10",
+    order_num: 10,
+    title: "Tantangan Kelas",
+    subtitle: "Uji pengetahuanmu",
+    icon: "FaMedal",
+    color: "rose",
+    content: {
+      intro: "Saatnya menguji semua pengetahuanmu! Perpaduan variabel, kondisi, dan perulangan.",
+      sections: [
+        {
+          heading: "Soal gabungan",
+          body: "Buat program yang menyimpan nama dan skor pemain. Jika skor >= 80, tampilkan 'Juara!'. Jika tidak, tampilkan 'Terus belajar!'.",
+        },
+        {
+          heading: "Petunjuk",
+          body: "Pakai variabel untuk nama dan skor, kondisi if/else untuk pengecekan, dan loop untuk memproses beberapa pemain.",
+        },
+      ],
+      tip: "Tidak harus benar pertama kali! Coba, error, perbaiki, dan coba lagi — itu proses koding yang sesungguhnya.",
+    },
+  },
+  {
+    age_group: "11-15",
+    order_num: 6,
+    title: "Array",
+    subtitle: "Kumpulan data terurut",
+    icon: "FaListAlt",
+    color: "purple",
+    content: {
+      intro: "Array adalah kumpulan data terurut yang bisa diakses melalui indeks. Mirip list di Python.",
+      sections: [
+        {
+          heading: "Python — list",
+          body: "List Python fleksibel dan mudah dipakai:",
+          code: {
+            language: "python",
+            snippet: 'siswa = ["Alice", "Budi", "Cahya"]\nprint(siswa[0])   # Alice\nprint(len(siswa)) # 3',
+          },
+        },
+        {
+          heading: "JavaScript — array",
+          body: "Array JavaScript mirip, tapi perhatikan tipenya:",
+          code: {
+            language: "javascript",
+            snippet: 'let siswa = ["Alice", "Budi", "Cahya"];\nconsole.log(siswa[0]); // Alice\nconsole.log(siswa.length); // 3',
+          },
+        },
+        {
+          heading: "Ubah isi array",
+          body: "Kamu bisa mengganti item berdasarkan indeks, dan menambah/menghapus item.",
+          code: {
+            language: "python",
+            snippet: 'siswa[1] = "Dani"\nprint(siswa)  # ["Alice", "Dani", "Cahya"]',
+          },
+        },
+      ],
+      tip: "Indeks array dimulai dari 0, bukan 1 — ini sumber error paling umum!",
+    },
+  },
+  {
+    age_group: "11-15",
+    order_num: 7,
+    title: "Function",
+    subtitle: "Kode yang bisa dipakai ulang",
+    icon: "FaProjectDiagram",
+    color: "teal",
+    content: {
+      intro: "Function memungkinkan kamu mengemas logika menjadi blok yang bisa dipanggil kapan saja dengan parameter berbeda.",
+      sections: [
+        {
+          heading: "Python — def",
+          body: "Buat function dengan def, tentukan parameter, dan kembalikan hasil dengan return:",
+          code: {
+            language: "python",
+            snippet: 'def kali(a, b):\n    return a * b\nprint(kali(3, 4))  # 12',
+          },
+        },
+        {
+          heading: "JavaScript — function",
+          body: "Sama konsepnya, tapi dengan sintaks JavaScript:",
+          code: {
+            language: "javascript",
+            snippet: 'function kali(a, b) {\n  return a * b;\n}\nconsole.log(kali(3, 4)); // 12',
+          },
+        },
+        {
+          heading: "Default parameter",
+          body: "Function bisa punya nilai bawaan jika parameter tidak diberikan. Python: def foo(x, y=10). JavaScript: function foo(x, y = 10).",
+        },
+      ],
+      tip: "Gunakan nama function yang deskriptif agar kode mudah dibaca oleh orang lain!",
+    },
+  },
+  {
+    age_group: "11-15",
+    order_num: 8,
+    title: "Object",
+    subtitle: "Data berstruktur",
+    icon: "FaCubes",
+    color: "brown",
+    content: {
+      intro: "Object menyimpan data dalam pasangan key-value. Sangat berguna untuk merepresentasikan entitas nyata.",
+      sections: [
+        {
+          heading: "Python — dict",
+          body: "Dictionary Python menyimpan data dengan kunci dan nilai:",
+          code: {
+            language: "python",
+            snippet: 'mahasiswa = {\n    "nama": "Sinta",\n    "umur": 15,\n    "kelas": "XII"\n}\nprint(mahasiswa["nama"])',
+          },
+        },
+        {
+          heading: "JavaScript — object",
+          body: "Object JavaScript menggunakan kurung kurawal:",
+          code: {
+            language: "javascript",
+            snippet: 'let mahasiswa = {\n  nama: "Sinta",\n  umur: 15,\n  kelas: "XII"\n};\nconsole.log(mahasiswa.nama);',
+          },
+        },
+        {
+          heading: "Nested object",
+          body: "Object bisa berisi object lain di dalamnya, membentuk struktur data yang kompleks.",
+        },
+      ],
+      tip: "Object sangat powerful — sebagian besar data di aplikasi nyata disimpan sebagai object!",
+    },
+  },
+  {
+    age_group: "11-15",
+    order_num: 9,
+    title: "Array Methods",
+    subtitle: "map, filter, find",
+    icon: "FaMagic",
+    color: "blue",
+    content: {
+      intro: "Array methods adalah fungsi bawaan untuk memproses array secara elegan tanpa loop manual.",
+      sections: [
+        {
+          heading: "map — transformasi",
+          body: "map membuat array baru dengan menerapkan fungsi ke setiap item:",
+          code: {
+            language: "python",
+            snippet: '# Python pakai list comprehension\nangka = [1, 2, 3]\nkali = [x * 2 for x in angka]\nprint(kali)  # [2, 4, 6]',
+          },
+        },
+        {
+          heading: "map di JavaScript",
+          body: "JavaScript punya method .map() bawaan:",
+          code: {
+            language: "javascript",
+            snippet: 'let angka = [1, 2, 3];\nlet kali = angka.map(x => x * 2);\nconsole.log(kali); // [2, 4, 6]',
+          },
+        },
+        {
+          heading: "filter dan find",
+          body: "filter memilih item yang cocok, find mencari item pertama yang cocok. Python pakai list comprehension dan next(), JavaScript pakai .filter() dan .find().",
+        },
+      ],
+      tip: "Array methods membuat kode lebih ringkas dan mudah dibaca dibandingkan loop manual!",
+    },
+  },
+  {
+    age_group: "11-15",
+    order_num: 10,
+    title: "Proyek Akhir",
+    subtitle: "Gabungkan semua materi",
+    icon: "FaFlagCheckered",
+    color: "dark",
+    content: {
+      intro: "Tantangan terakhir: bangun program kecil yang memakai semua materi yang sudah dipelajari.",
+      sections: [
+        {
+          heading: "Rencanakan dulu",
+          body: "Tuliskan apa yang ingin program lakukan. Pecah jadi langkah kecil: input, proses, output. Ini adalah cara kerja programmer profesional!",
+        },
+        {
+          heading: "Bangun bertahap",
+          body: "Mulai dari variabel dan input, tambahkan kondisi, perulangan, dan function satu per satu. Jangan langsung satu langkah.",
+        },
+        {
+          heading: "Test dan perbaiki",
+          body: "Jalankan program dengan berbagai input. Kalau error, baca pesan error-nya dan perbaiki. Ini disebut debugging!",
+        },
+      ],
+      tip: "Semua materi yang kamu pelajari — variabel, operator, kondisi, perulangan, function, array, object — akan terpakai di proyek nyata!",
     },
   },
 ];

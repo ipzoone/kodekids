@@ -19,6 +19,7 @@ import {
   FaCheckCircle,
   FaStar,
 } from "react-icons/fa";
+import MaterialBlockPuzzle from "./MaterialBlockPuzzle";
 
 const ICONS = {
   FaBook,
@@ -236,6 +237,10 @@ export default function Materials({ ageGroup, onHome }) {
               )}
             </div>
           ))}
+
+          {current.content.blocks && (
+            <MaterialBlockPuzzle blocks={current.content.blocks} />
+          )}
 
           {current.content.tip && (
             <div className="flex gap-3 bg-kk-sun/25 border-2 border-kk-sun rounded-2xl p-4">
