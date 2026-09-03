@@ -4,13 +4,15 @@ import { computeBadges, diffNewBadges } from "../utils/badges";
 const CONVERSATION_ID = "game-" + Math.random().toString(36).slice(2);
 
 export async function callGame(payload) {
+  const user = currentUserOrNull();
+  const userId = user?.id || null;
   const res = await fetch("/api/game", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "makers-conversation-id": CONVERSATION_ID,
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, userId }),
   });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${await res.text()}`);

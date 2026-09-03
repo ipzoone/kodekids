@@ -131,3 +131,42 @@ export async function getChallengeFromDb(cfg, ageGroup, level, step = 1) {
   } catch {}
   return { type: row.type, title: row.title, body: row.body, data };
 }
+
+export async function ensureUserBestTimesSchema(cfg) {
+  await query(
+    cfg,
+    `CREATE TABLE IF NOT EXISTS user_best_times (
+      user_id TEXT NOT NULL,
+      age_group TEXT NOT NULL,
+      level INTEGER NOT NULL,
+      best_time INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+      PRIMARY KEY (user_id, age_group, level)
+    )`
+  );
+}
+
+export async function upsertUserBestTime(cfg, userId, ageGroup, level, bestTime) {
+  await query(
+    cfg,
+    `INSERT INTO user_best_times (user_id, age_group, level, best_time, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, age_group, level) DO UPDATE SET
+       best_time = CASE WHEN excluded.best_time < best_time THEN excluded.best_time ELSE best_time END,
+       updated_at = excluded.updated_at`,
+    [userId, ageGroup, level, bestTime]
+  );
+}
+
+export async function getUserBestTimes(cfg, userId, ageGroup) {
+  const rows = await query(
+    cfg,
+    "SELECT level, best_time FROM user_best_times WHERE user_id = ? AND age_group = ?",
+    [userId, ageGroup]
+  );
+  const result = {};
+  for (const row of rows) {
+    result[row.level] = row.best_time;
+  }
+  return result;
+}

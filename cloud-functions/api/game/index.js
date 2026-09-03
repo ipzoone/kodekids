@@ -3,7 +3,7 @@ import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
 import fs from "node:fs";
 import path from "node:path";
-import { getTursoConfig, ensureSchema, getAgeConfigFromDb, getChallengeFromDb } from "./turso.js";
+import { getTursoConfig, ensureSchema, ensureUserBestTimesSchema, getAgeConfigFromDb, getChallengeFromDb, upsertUserBestTime, getUserBestTimes } from "./turso.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -97,8 +97,6 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
     // 5-7 & 11-15 pakai template deterministik (andal untuk anak-anak),
     // 8-10 diracik LLM lalu divalidasi fallback template.
     if (state.ageGroup === "5-7") {
-      // Panjang urutan diambil dari data soal (makin tinggi level/step makin panjang),
-      // dengan rotasi pola biar tiap soal dalam satu level terasa berbeda.
       const targetLength = row.data.length || Math.min(2 + state.level, 5);
       const moves = row.data.moves;
       const offset = ((state.step - 1) * 2) % moves.length;
@@ -106,6 +104,15 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
         { length: targetLength },
         (_, i) => moves[(i + offset) % moves.length],
       );
+      const levelStories = {
+        1: "Wah, petualangan pertama kita dimulai! Bayangin kamu lagi bantu si kucing imut mengumpulkan ikan lezatnya",
+        2: "Yeay, kamu sudah jago! Sekarang kita lanjut ke tantangan yang sedikit lebih seru ya",
+        3: "Wih keren banget! Kamu makin pintar nih. Ayo kita coba yang agak menantang",
+        4: "Hampir jadi juara nih! Tinggal sedikit lagi, kamu pasti bisa melewatinya",
+        5: "Wah, ini level boss yang paling seru! Waktunya terbatas, jadi harus cepat dan tepat ya",
+      };
+      const cerita = levelStories[state.level] || levelStories[1];
+      const narration = `Halo kodekids! ${cerita}. ${row.body}. Lihat ikon-ikon lucu di bawah ya, terus susun mereka sesuai urutan yang benar. Pelan-pelan aja, nggak usah buru-buru. Yuk, kita mulai petualangannya sekarang!`;
       return {
         challenge: {
           type: "sequence",
@@ -115,6 +122,7 @@ function makeChallengeGeneratorNode(generatorModel, cfg) {
           availableIcons: moves,
           goalIcon: row.data.goalIcon,
           target,
+          narration,
         },
       };
     }
@@ -308,25 +316,30 @@ export async function onRequest(context) {
 
   const ageGroup = ["5-7", "8-10", "11-15"].includes(body.ageGroup) ? body.ageGroup : "8-10";
 
-  const inputState = {
-    action: body.action === "submit" ? "submit" : "start",
-    ageGroup,
-    language: body.language === "javascript" ? "javascript" : body.language === "python" ? "python" : "",
-    level: Number(body.level) > 0 ? Number(body.level) : 1,
-    step: Number(body.step) > 0 ? Number(body.step) : 1,
-    score: Number(body.score) || 0,
-    attemptCount: Number(body.attemptCount) || 0,
-    lastError: body.lastError || "",
-    challenge: body.challenge || null,
-    submission: body.submission || null,
-  };
+    const userId = body.userId || null;
 
-  try {
-    const tursoCfg = getTursoConfig(context);
-    await ensureSchema(tursoCfg);
-    const maxLevels = (await getAgeConfigFromDb(tursoCfg, ageGroup))?.max_levels || 5;
-    const agent = buildAgent(context, tursoCfg);
-    const result = await agent.invoke(inputState);
+    const inputState = {
+      action: body.action === "submit" ? "submit" : "start",
+      ageGroup,
+      language: body.language === "javascript" ? "javascript" : body.language === "python" ? "python" : "",
+      level: Number(body.level) > 0 ? Number(body.level) : 1,
+      step: Number(body.step) > 0 ? Number(body.step) : 1,
+      score: Number(body.score) || 0,
+      attemptCount: Number(body.attemptCount) || 0,
+      lastError: body.lastError || "",
+      challenge: body.challenge || null,
+      submission: body.submission || null,
+      bestTime: Number(body.bestTime) || null,
+      userId: userId || null,
+    };
+
+    try {
+      const tursoCfg = getTursoConfig(context);
+      await ensureSchema(tursoCfg);
+      await ensureUserBestTimesSchema(tursoCfg);
+      const maxLevels = (await getAgeConfigFromDb(tursoCfg, ageGroup))?.max_levels || 5;
+      const agent = buildAgent(context, tursoCfg);
+      const result = await agent.invoke(inputState);
 
     const base = {
       ok: true,
@@ -339,7 +352,14 @@ export async function onRequest(context) {
 
     // Mulai level baru → cukup kirim tantangannya
     if (inputState.action === "start") {
-      return jsonResponse({ ...base, challenge: result.challenge ?? null });
+      let storedBestTime = null;
+      if (inputState.userId) {
+        try {
+          const bestTimes = await getUserBestTimes(tursoCfg, inputState.userId, inputState.ageGroup);
+          storedBestTime = bestTimes[inputState.level] || null;
+        } catch {}
+      }
+      return jsonResponse({ ...base, challenge: result.challenge ?? null, bestTime: storedBestTime });
     }
 
     const response = {
@@ -349,6 +369,7 @@ export async function onRequest(context) {
       feedback: result.feedback ?? "",
       hint: result.hint ?? "",
       sandboxOutput: result.sandboxOutput ?? "",
+      bestTime: inputState.bestTime,
     };
 
     if (response.correct) {
@@ -363,6 +384,12 @@ export async function onRequest(context) {
     } else {
       response.attemptCount = inputState.attemptCount + 1;
       response.lastError = response.feedback.slice(0, 200);
+    }
+
+    if (inputState.action === "submit" && inputState.userId && inputState.bestTime) {
+      try {
+        await upsertUserBestTime(tursoCfg, inputState.userId, inputState.ageGroup, inputState.level, inputState.bestTime);
+      } catch {}
     }
 
     return jsonResponse(response);
